@@ -60,6 +60,10 @@ pub struct View {
     pub label: Option<String>,
     /// Caption, if any.
     pub legend: Option<String>,
+    /// Master image width, when known from `Pagination`.
+    pub width: Option<u32>,
+    /// Master image height, when known from `Pagination`.
+    pub height: Option<u32>,
 }
 
 impl Client {
@@ -96,6 +100,8 @@ impl Client {
                     view: page.order,
                     label: page.label,
                     legend: page.legend,
+                    width: page.width,
+                    height: page.height,
                 })
                 .collect()),
             Ok(p) => {
@@ -107,6 +113,8 @@ impl Client {
                             view: i,
                             label: None,
                             legend: None,
+                            width: None,
+                            height: None,
                         })
                         .collect());
                 }
@@ -131,6 +139,8 @@ impl Client {
                 view: c.view,
                 label: c.label,
                 legend: None,
+                width: c.width,
+                height: c.height,
             })
             .collect())
     }

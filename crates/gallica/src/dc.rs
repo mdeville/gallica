@@ -112,6 +112,15 @@ impl DublinCore {
         })
     }
 
+    /// The periodical this issue belongs to, from a relation such as
+    /// `http://gallica.bnf.fr/ark:/12148/cb327110547/date`.
+    pub fn periodical_ark(&self) -> Option<Ark> {
+        self.relations
+            .iter()
+            .filter_map(|r| Ark::parse(r.trim()).ok())
+            .find(|a| a.is_periodical())
+    }
+
     /// `true` if the record declares itself as public domain.
     pub fn is_public_domain(&self) -> bool {
         self.rights.iter().any(|r| {

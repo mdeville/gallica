@@ -238,6 +238,10 @@ pub struct Page {
     pub pagination_type: Option<String>,
     /// Caption, for maps, image sets and manuscripts.
     pub legend: Option<String>,
+    /// Width of the master image in pixels, when the service provides it.
+    pub width: Option<u32>,
+    /// Height of the master image in pixels, when the service provides it.
+    pub height: Option<u32>,
 }
 
 impl Page {
@@ -544,8 +548,13 @@ pub fn parse_issue_years(xml: &str) -> Result<IssueYears> {
     years.sort_unstable();
     years.dedup();
     Ok(IssueYears {
-        parent_ark: root.attr("parent_ark").unwrap_or_default().to_string(),
-        total_issues: root.attr("total_issues").and_then(|s| s.parse().ok()),
+        parent_ark: root
+            .attr_any(&["parent_ark", "parentArk"])
+            .unwrap_or_default()
+            .to_string(),
+        total_issues: root
+            .attr_any(&["total_issues", "totalIssues"])
+            .and_then(|s| s.parse().ok()),
         uc3: root.attr("uc3").and_then(parse_bool),
         years,
     })
@@ -576,7 +585,10 @@ pub fn parse_issue_list(xml: &str, year: u16) -> Result<IssueList> {
         });
     }
     Ok(IssueList {
-        parent_ark: root.attr("parent_ark").unwrap_or_default().to_string(),
+        parent_ark: root
+            .attr_any(&["parent_ark", "parentArk"])
+            .unwrap_or_default()
+            .to_string(),
         year,
         issues,
     })
@@ -656,7 +668,10 @@ pub fn parse_pagination(xml: &str) -> Result<Pagination> {
             .as_deref()
             .and_then(parse_bool)
             .unwrap_or(false);
-        out.toc_location = s.child("TocLocation").and_then(|e| e.parse_text());
+        out.toc_location = s
+            .child("TocLocation")
+            .and_then(|e| e.parse_text::<u32>())
+            .filter(|loc| *loc > 0);
         out.has_content = s
             .child_text("hasContent")
             .as_deref()
@@ -677,6 +692,8 @@ pub fn parse_pagination(xml: &str) -> Result<Pagination> {
                 label: p.child_text("numero"),
                 pagination_type: p.child_text("pagination_type"),
                 legend: p.child_text("legend"),
+                width: p.child("image_width").and_then(|e| e.parse_text()),
+                height: p.child("image_height").and_then(|e| e.parse_text()),
             });
         }
     }
@@ -706,19 +723,7 @@ pub fn parse_content_search(xml: &str) -> Result<ContentSearchResults> {
             let page = page_id.rsplit('_').next().and_then(|n| n.parse().ok());
             let (excerpt, highlights) = item
                 .child("content")
-                .map(|c| {
-                    let highlights = c
-                        .find_all("span")
-                        .into_iter()
-                        .filter(|s| {
-                            s.attr("class")
-                                .map(|c| c.contains("highlight"))
-                                .unwrap_or(false)
-                        })
-                        .map(|s| s.text())
-                        .collect();
-                    (c.text(), highlights)
-                })
+                .map(excerpt_and_highlights)
                 .unwrap_or_default();
             let mut words = Vec::new();
             if let Some(altoid) = item.child("altoid") {
@@ -849,7 +854,20 @@ fn parse_toc_tei(xml: &str) -> Vec<TocEntry> {
 }
 
 fn decode_html(s: &str) -> String {
-    // Minimal decoding of the entities Gallica's legacy TOC pages use.
+    // Numeric entities first (`&#233;`, `&#xE9;`), then the named ones Gallica uses.
+    let numeric = regex::Regex::new(r"&#(x[0-9a-fA-F]+|[0-9]+);").expect("valid regex");
+    let s = numeric.replace_all(s, |c: &regex::Captures| {
+        let code = &c[1];
+        let value = if let Some(hex) = code.strip_prefix('x') {
+            u32::from_str_radix(hex, 16).ok()
+        } else {
+            code.parse::<u32>().ok()
+        };
+        value
+            .and_then(char::from_u32)
+            .map(String::from)
+            .unwrap_or_else(|| c[0].to_string())
+    });
     let mut out = s
         .replace("&amp;", "&")
         .replace("&lt;", "<")
@@ -891,6 +909,55 @@ fn decode_html(s: &str) -> String {
         }
     }
     out.trim().to_string()
+}
+
+/// Turns a `<content>` element into plain text plus the highlighted words.
+///
+/// The documentation shows the highlight `<span>`s as XML children, but the
+/// live service escapes the HTML (`&lt;span ...&gt;`) and double-escapes
+/// entities (`&amp;#233;`), so the text is run through an HTML pass either way.
+fn excerpt_and_highlights(content: &Element) -> (String, Vec<String>) {
+    let mut html = String::new();
+    serialize_html(content, &mut html);
+    let highlight =
+        regex::Regex::new(r#"(?is)<span[^>]*class=['"]?highlight['"]?[^>]*>(.*?)</span>"#)
+            .expect("valid regex");
+    let highlights = highlight
+        .captures_iter(&html)
+        .map(|c| decode_html(&c[1]))
+        .filter(|s| !s.is_empty())
+        .collect();
+    let tag = regex::Regex::new(r"<[^>]+>").expect("valid regex");
+    let text = decode_html(&tag.replace_all(&html, ""));
+    let text = text.split_whitespace().collect::<Vec<_>>().join(" ");
+    (text, highlights)
+}
+
+/// Re-serialises real child elements as HTML so both shapes look alike.
+fn serialize_html(el: &Element, out: &mut String) {
+    for node in &el.children {
+        match node {
+            crate::xml::Node::Text(t) => {
+                if !out.is_empty()
+                    && !out.ends_with(char::is_whitespace)
+                    && !t.starts_with(char::is_whitespace)
+                {
+                    out.push(' ');
+                }
+                out.push_str(t);
+            }
+            crate::xml::Node::Element(e) => {
+                out.push('<');
+                out.push_str(&e.name);
+                for (k, v) in &e.attrs {
+                    out.push_str(&format!(" {k}='{v}'"));
+                }
+                out.push('>');
+                serialize_html(e, out);
+                out.push_str(&format!("</{}>", e.name));
+            }
+        }
+    }
 }
 
 #[cfg(test)]

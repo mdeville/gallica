@@ -3,6 +3,11 @@
 //! See <https://api.bnf.fr/fr/api-iiif-de-recuperation-des-images-de-gallica>
 //! and the IIIF Image API 2.x specification.
 //!
+//! Gallica currently serves IIIF Image API 1.1 (`info.json` carries a
+//! `library.stanford.edu/iiif/image-api/1.1` profile), so `native` is the
+//! right quality and `full` the right size; `max`, `square` and mirrored
+//! rotations are 2.1 features that may not be honoured.
+//!
 //! Image URLs look like
 //! `https://gallica.bnf.fr/iiif/ark:/12148/<name>/f<view>/<region>/<size>/<rotation>/<quality>.<format>`.
 
@@ -371,6 +376,8 @@ pub struct Canvas {
     pub service_id: Option<String>,
     /// The URL of the image resource as given by the manifest.
     pub image_url: Option<String>,
+    /// Thumbnail URL, when present.
+    pub thumbnail: Option<String>,
 }
 
 impl Manifest {
@@ -425,6 +432,7 @@ impl Manifest {
                     height: c.get("height").and_then(Value::as_u64).map(|h| h as u32),
                     service_id: image.and_then(|r| r.get("service")).and_then(id_or_str),
                     image_url: image.and_then(|r| str_at(r, "@id")),
+                    thumbnail: c.get("thumbnail").and_then(id_or_str),
                 });
             }
         }

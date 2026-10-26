@@ -1,0 +1,249 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<srw:searchRetrieveResponse xmlns:ns6="http://gallica.bnf.fr/namespaces/gallica/" xmlns:diag="http://www.loc.gov/zing/srw/diagnostic/" xmlns:oai_dc="http://www.openarchives.org/OAI/2.0/oai_dc/" xmlns:srw="http://www.loc.gov/zing/srw/" xmlns:dc="http://purl.org/dc/elements/1.1/">
+    <srw:version>1.2</srw:version>
+    <srw:echoedSearchRetrieveRequest>
+        <srw:query>dc.title all "figaro"</srw:query>
+        <srw:version>1.2</srw:version>
+    </srw:echoedSearchRetrieveRequest>
+    <srw:numberOfRecords>557</srw:numberOfRecords>
+    <srw:extraResponseData>&lt;numberOfRecordsDecollapser&gt;43015&lt;/numberOfRecordsDecollapser&gt;</srw:extraResponseData>
+    <srw:records>
+        <srw:record>
+            <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordData>
+                <oai_dc:dc>
+                    <dc:contributor>Lacaze, Alfred de. Directeur de publication</dc:contributor>
+                    <dc:date>1838-1839</dc:date>
+                    <dc:description>Périodicité : Deux fois par semaine (dimanche et jeudi)</dc:description>
+                    <dc:description>Etat de collection : 1838-1839</dc:description>
+                    <dc:format>Nombre total de vues : 68</dc:format>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/cb34447474s/date</dc:identifier>
+                    <dc:identifier>NUMP-12628</dc:identifier>
+                    <dc:identifier>ISSN 12411094</dc:identifier>
+                    <dc:language>fre</dc:language>
+                    <dc:publisher>[s.n.] (Paris)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb34447474s</dc:relation>
+                    <dc:relation>A pour reproduction : Figaro (Paris. 1838. Reproduction numérique) = ISSN 2420-4161 (https://gallica.bnf.fr/ark:/12148/cb34447474s/date)</dc:relation>
+                    <dc:relation>A pour reproduction : Figaro (Paris. 1838. Reproduction numérique) = ISSN 2420-4161 (https://www.retronews.fr/ark:/12148/cb34447474s/notice)</dc:relation>
+                    <dc:source>Bibliothèque nationale de France</dc:source>
+                    <dc:title>Figaro (Paris. 1838)</dc:title>
+                    <dc:title>Figaro</dc:title>
+                    <dc:type>text</dc:type>
+                    <dc:type>texte</dc:type>
+                    <dc:type>publication en série imprimée</dc:type>
+                    <dc:type>printed serial</dc:type>
+                </oai_dc:dc>
+            </srw:recordData>
+            <srw:recordIdentifier>ark</srw:recordIdentifier>
+            <srw:recordPosition>0</srw:recordPosition>
+            <srw:extraRecordData>
+                <epubFile></epubFile>
+                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k269136x.highres</highres>
+                <infoSupModifiable></infoSupModifiable>
+                <link>https://gallica.bnf.fr/ark:/12148/cb34447474s/date</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k269136x.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k269136x.medres</medres>
+                <nqamoyen>87.32</nqamoyen>
+                <provenance>Gallica</provenance>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k269136x.thumbnail</thumbnail>
+                <typedoc>periodiques</typedoc>
+                <uri>bpt6k269136x</uri>
+            </srw:extraRecordData>
+        </srw:record>
+        <srw:record>
+            <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordData>
+                <oai_dc:dc>
+                    <dc:contributor>Villemessant, Hippolyte de (1810-1879). Directeur de publication</dc:contributor>
+                    <dc:contributor>Jouvin, Benoît (1810-1886). Directeur de publication</dc:contributor>
+                    <dc:date>1854</dc:date>
+                    <dc:description>Variante(s) de titre : Le Figaro</dc:description>
+                    <dc:description>Périodicité : Hebdomadaire (1854-1855) ; deux fois par semaine (1856-11 novembre 1866) ; quotidien (16 novembre 1866-)</dc:description>
+                    <dc:description>Etat de collection : 1826 (1e janv.)-N° 365 (1935, 31 déc.)</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BIPFPIG00</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BIPFPIG63</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BIPFPIG69</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : Pam1</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BnPlCo00</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : BnPlCo01</dc:description>
+                    <dc:description>Appartient à l’ensemble documentaire : FranceBr</dc:description>
+                    <dc:format>Nombre total de vues : 164718</dc:format>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/cb34355551z/date</dc:identifier>
+                    <dc:identifier>NUMP-1139</dc:identifier>
+                    <dc:identifier>ISSN 01825852</dc:identifier>
+                    <dc:language>fre</dc:language>
+                    <dc:publisher>Figaro (Paris)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb34355551z</dc:relation>
+                    <dc:source>Bibliothèque nationale de France</dc:source>
+                    <dc:title>Le Figaro (Paris. 1854)</dc:title>
+                    <dc:title>Figaro : journal non politique</dc:title>
+                    <dc:type>text</dc:type>
+                    <dc:type>texte</dc:type>
+                    <dc:type>publication en série imprimée</dc:type>
+                    <dc:type>printed serial</dc:type>
+                </oai_dc:dc>
+            </srw:recordData>
+            <srw:recordIdentifier>ark</srw:recordIdentifier>
+            <srw:recordPosition>1</srw:recordPosition>
+            <srw:extraRecordData>
+                <epubFile></epubFile>
+                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k296978f.highres</highres>
+                <infoSupModifiable></infoSupModifiable>
+                <link>https://gallica.bnf.fr/ark:/12148/cb34355551z/date</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k296978f.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k296978f.medres</medres>
+                <nqamoyen>81.52</nqamoyen>
+                <provenance>Gallica</provenance>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k296978f.thumbnail</thumbnail>
+                <typedoc>periodiques</typedoc>
+                <uri>bpt6k296978f</uri>
+            </srw:extraRecordData>
+        </srw:record>
+        <srw:record>
+            <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordData>
+                <oai_dc:dc>
+                    <dc:date>1844-1845</dc:date>
+                    <dc:description>Variante(s) de titre : Figaro (Port-Républicain)</dc:description>
+                    <dc:description>Périodicité : Tous les quinze jours (n° 1-2) ; irrégulier (n° 3-4)</dc:description>
+                    <dc:description>Avec mode texte</dc:description>
+                    <dc:format>Nombre total de vues : 18</dc:format>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/cb32775175p/date</dc:identifier>
+                    <dc:language>fre</dc:language>
+                    <dc:language>français</dc:language>
+                    <dc:publisher> (Port-Républicain)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb32775175p</dc:relation>
+                    <dc:source>Bibliothèque nationale de France, département Littérature et art, Z-8803</dc:source>
+                    <dc:title>Figaro, barbier-perruquier : journal universel...</dc:title>
+                    <dc:type>text</dc:type>
+                    <dc:type>texte</dc:type>
+                    <dc:type>publication en série imprimée</dc:type>
+                    <dc:type>printed serial</dc:type>
+                </oai_dc:dc>
+            </srw:recordData>
+            <srw:recordIdentifier>ark</srw:recordIdentifier>
+            <srw:recordPosition>2</srw:recordPosition>
+            <srw:extraRecordData>
+                <epubFile></epubFile>
+                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k5810465x.highres</highres>
+                <infoSupModifiable></infoSupModifiable>
+                <link>https://gallica.bnf.fr/ark:/12148/cb32775175p/date</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k5810465x.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k5810465x.medres</medres>
+                <nqamoyen>30.51</nqamoyen>
+                <provenance>Gallica</provenance>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k5810465x.thumbnail</thumbnail>
+                <typedoc>periodiques</typedoc>
+                <uri>bpt6k5810465x</uri>
+            </srw:extraRecordData>
+        </srw:record>
+        <srw:record>
+            <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordData>
+                <oai_dc:dc>
+                    <dc:contributor>Karr, Alphonse (1808-1890). Directeur de publication</dc:contributor>
+                    <dc:date>1835-1838</dc:date>
+                    <dc:description>Variante(s) de titre : Figaro : nouvelliste du soir</dc:description>
+                    <dc:description>Variante(s) de titre : Figaro : journal quotidien, politique et littéraire</dc:description>
+                    <dc:description>Variante(s) de titre : Figaro : journal-livre - revue quotidienne</dc:description>
+                    <dc:description>Variante(s) de titre : Figaro</dc:description>
+                    <dc:description>Variante(s) de titre : Le Figaro : journal quotidien, politique et littéraire</dc:description>
+                    <dc:description>Variante(s) de titre : Le Figaro</dc:description>
+                    <dc:description>Périodicité : Quotidien</dc:description>
+                    <dc:description>Etat de collection : 1835-1838</dc:description>
+                    <dc:format>Nombre total de vues : 3197</dc:format>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/cb344482258/date</dc:identifier>
+                    <dc:identifier>NUMP-12629</dc:identifier>
+                    <dc:identifier>ISSN 11608382</dc:identifier>
+                    <dc:language>fre</dc:language>
+                    <dc:publisher>[s.n.] (Paris)</dc:publisher>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb344482258</dc:relation>
+                    <dc:relation>A pour reproduction : Figaro (Paris. 1835. Reproduction numérique) = ISSN 2420-4242 (https://gallica.bnf.fr/ark:/12148/cb344482258/date)</dc:relation>
+                    <dc:relation>A pour reproduction : Figaro (Paris. 1835. Reproduction numérique) = ISSN 2420-4242 (https://www.retronews.fr/ark:/12148/cb344482258/notice)</dc:relation>
+                    <dc:source>Bibliothèque nationale de France</dc:source>
+                    <dc:title>Figaro (Paris. 1835)</dc:title>
+                    <dc:title>Figaro : électeur, juré, contribuable, artiste, financier, auteur, industriel, homme du monde et journaliste</dc:title>
+                    <dc:type>text</dc:type>
+                    <dc:type>texte</dc:type>
+                    <dc:type>publication en série imprimée</dc:type>
+                    <dc:type>printed serial</dc:type>
+                </oai_dc:dc>
+            </srw:recordData>
+            <srw:recordIdentifier>ark</srw:recordIdentifier>
+            <srw:recordPosition>3</srw:recordPosition>
+            <srw:extraRecordData>
+                <epubFile></epubFile>
+                <highres>https://gallica.bnf.fr/ark:/12148/bpt6k268589r.highres</highres>
+                <infoSupModifiable></infoSupModifiable>
+                <link>https://gallica.bnf.fr/ark:/12148/cb344482258/date</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/bpt6k268589r.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/bpt6k268589r.medres</medres>
+                <nqamoyen>75.77</nqamoyen>
+                <provenance>Gallica</provenance>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k268589r.thumbnail</thumbnail>
+                <typedoc>periodiques</typedoc>
+                <uri>bpt6k268589r</uri>
+            </srw:extraRecordData>
+        </srw:record>
+        <srw:record>
+            <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+            <srw:recordPacking>xml</srw:recordPacking>
+            <srw:recordData>
+                <oai_dc:dc>
+                    <dc:creator>Bonnard, Pierre (1867-1947). Lithographe</dc:creator>
+                    <dc:date>1903</dc:date>
+                    <dc:description>Référence bibliographique : Bouvet, 78</dc:description>
+                    <dc:description>Référence bibliographique : IFF19 BONNARD (Pierre), n.d.</dc:description>
+                    <dc:description>Référence bibliographique : Roger-Marx, 70</dc:description>
+                    <dc:description>Référence bibliographique : Floury, 34</dc:description>
+                    <dc:description>Affiche</dc:description>
+                    <dc:format>1 est. : lithographie en deux couleurs ; 64 x 42,9 cm</dc:format>
+                    <dc:format>image/jpeg</dc:format>
+                    <dc:format>Nombre total de vues : 1</dc:format>
+                    <dc:identifier>https://gallica.bnf.fr/ark:/12148/btv1b53128639d</dc:identifier>
+                    <dc:language>Sans contenu linguistique</dc:language>
+                    <dc:publisher>"Le Figaro" (Paris)</dc:publisher>
+                    <dc:relation>Notice de recueil : http://catalogue.bnf.fr/ark:/12148/cb44454598n</dc:relation>
+                    <dc:relation>Appartient à : [Recueil. Oeuvre de Pierre Bonnard. Oeuvre de Réserve. Pièces de grand format]</dc:relation>
+                    <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb39854564m</dc:relation>
+                    <dc:rights>domaine public</dc:rights>
+                    <dc:rights>public domain</dc:rights>
+                    <dc:source>Bibliothèque nationale de France, département Estampes et photographie, RESERVE AA-5 (BONNARD, Pierre)</dc:source>
+                    <dc:subject>Hermant, Abel (1862-1950) -- Roman</dc:subject>
+                    <dc:subject>Journaux -- Lecture</dc:subject>
+                    <dc:subject>Le Figaro (Périodique)</dc:subject>
+                    <dc:subject>Presse</dc:subject>
+                    <dc:subject>Scènes -- 1870-1913</dc:subject>
+                    <dc:title>Lire dans "Le Figaro" le nouveau roman d'Abel Hermant "Confession d'un Homme d'aujourd'hui" : [estampe, affiche] / Pierre Bonnard</dc:title>
+                    <dc:title>Affiches pour Le Figaro</dc:title>
+                    <dc:title>Le Figaro</dc:title>
+                    <dc:type>image fixe</dc:type>
+                    <dc:type>image</dc:type>
+                    <dc:type>still image</dc:type>
+                    <dc:type>estampe</dc:type>
+                    <dc:type>engraving</dc:type>
+                </oai_dc:dc>
+            </srw:recordData>
+            <srw:recordIdentifier>ark</srw:recordIdentifier>
+            <srw:recordPosition>4</srw:recordPosition>
+            <srw:extraRecordData>
+                <epubFile></epubFile>
+                <highres>https://gallica.bnf.fr/ark:/12148/btv1b53128639d.highres</highres>
+                <infoSupModifiable></infoSupModifiable>
+                <link>https://gallica.bnf.fr/ark:/12148/btv1b53128639d</link>
+                <lowres>https://gallica.bnf.fr/ark:/12148/btv1b53128639d.lowres</lowres>
+                <medres>https://gallica.bnf.fr/ark:/12148/btv1b53128639d.medres</medres>
+                <nqamoyen>0.0</nqamoyen>
+                <provenance>Gallica</provenance>
+                <thumbnail>https://gallica.bnf.fr/ark:/12148/btv1b53128639d.thumbnail</thumbnail>
+                <typedoc>images</typedoc>
+                <uri>btv1b53128639d</uri>
+            </srw:extraRecordData>
+        </srw:record>
+    </srw:records>
+    <srw:nextRecordPosition>6</srw:nextRecordPosition>
+</srw:searchRetrieveResponse>

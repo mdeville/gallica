@@ -96,6 +96,16 @@ pub struct SearchRecord {
     pub thumbnail: Option<String>,
     /// Digital provenance from the extra record data.
     pub provenance: Option<String>,
+    /// Preview image URLs (`lowres`, `medres`, `highres`) from the extra record data.
+    pub lowres: Option<String>,
+    /// See [`SearchRecord::lowres`].
+    pub medres: Option<String>,
+    /// See [`SearchRecord::lowres`].
+    pub highres: Option<String>,
+    /// For a collapsed periodical, the document (issue) whose previews are
+    /// shown (`uri` in the extra record data); for a document, the document
+    /// itself.
+    pub representative_ark: Option<Ark>,
     /// Every element of `srw:extraRecordData`, as `(name, text)`.
     pub extra: Vec<(String, String)>,
 }
@@ -222,6 +232,10 @@ pub fn parse_search_results(xml: &str) -> Result<SearchResults> {
                 rec.ocr_quality = extra.child("nqamoyen").and_then(|e| e.parse_text());
                 rec.thumbnail = extra.child_text("thumbnail");
                 rec.provenance = extra.child_text("provenance");
+                rec.lowres = extra.child_text("lowres");
+                rec.medres = extra.child_text("medres");
+                rec.highres = extra.child_text("highres");
+                rec.representative_ark = extra.child_text("uri").and_then(|u| Ark::parse(&u).ok());
             }
             out.records.push(rec);
         }

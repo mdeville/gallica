@@ -101,6 +101,13 @@ impl Element {
             .map(|(_, v)| v.as_str())
     }
 
+    /// The value of the first attribute found among the given local names.
+    /// Gallica has renamed some attributes from snake_case to camelCase over
+    /// time, so parsers accept both spellings.
+    pub fn attr_any(&self, names: &[&str]) -> Option<&str> {
+        names.iter().find_map(|n| self.attr(n))
+    }
+
     /// Direct child elements with the given local name.
     pub fn children(&self, name: &str) -> impl Iterator<Item = &Element> {
         self.elements().filter(move |e| e.name == name)
