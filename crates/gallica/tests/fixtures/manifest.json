@@ -1,0 +1,15 @@
+{
+  "@context": "http://iiif.io/api/presentation/2.0/context.json",
+  "@id": "https://gallica.bnf.fr/iiif/ark:/12148/bpt6k5738219s/manifest.json",
+  "@type": "sc:Manifest",
+  "label": "La plage d'Etretat",
+  "attribution": "Bibliothèque nationale de France",
+  "metadata": [{"label": "Title", "value": "La plage d'Etretat"}, {"label": "Date", "value": "1868"}],
+  "sequences": [{"@type": "sc:Sequence", "canvases": [
+    {"@id": "https://gallica.bnf.fr/iiif/ark:/12148/bpt6k5738219s/canvas/f1", "@type": "sc:Canvas", "label": "NP", "width": 2385, "height": 3700,
+     "images": [{"resource": {"@id": "https://gallica.bnf.fr/iiif/ark:/12148/bpt6k5738219s/f1/full/full/0/native.jpg",
+                              "service": {"@id": "https://gallica.bnf.fr/iiif/ark:/12148/bpt6k5738219s/f1"}}}]},
+    {"@id": "https://gallica.bnf.fr/iiif/ark:/12148/bpt6k5738219s/canvas/f2", "@type": "sc:Canvas", "label": "1", "width": 2385, "height": 3700,
+     "images": [{"resource": {"@id": "https://gallica.bnf.fr/iiif/ark:/12148/bpt6k5738219s/f2/full/full/0/native.jpg"}}]}
+  ]}]
+}

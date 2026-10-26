@@ -1,0 +1,83 @@
+# gallica
+
+A bulk downloader for [Gallica](https://gallica.bnf.fr), the digital library of
+the Bibliothèque nationale de France, written in Rust.
+
+The project is built in layers:
+
+1. **`crates/gallica`** — a client SDK for the Gallica APIs (this is what exists today);
+2. a CLI on top of the SDK (next);
+3. a cross-platform GUI (later).
+
+## The SDK
+
+The `gallica` crate wraps the public BnF APIs documented on
+[api.bnf.fr](https://api.bnf.fr/fr/recherche?f%5B0%5D=categories%3A1158):
+
+| API | Module | What it gives you |
+|-----|--------|-------------------|
+| [Document](https://api.bnf.fr/fr/api-document-de-gallica) | `document` | `Issues` (years and issues of a periodical), `OAIRecord` (bibliographic record), `Pagination` (views of a document), `ContentSearch` (full text search inside a document), `Toc`, plain text (`texteBrut`), ALTO OCR, PDF and preview images |
+| [Search](https://api.bnf.fr/fr/api-gallica-de-recherche) | `sru` | SRU 1.2 searches with CQL queries, paging, and a small CQL builder |
+| [IIIF](https://api.bnf.fr/fr/api-iiif-de-recuperation-des-images-de-gallica) | `iiif` | Image API URLs (region, size, rotation, quality, format), `info.json`, Presentation manifests, image download |
+
+On top of those, `collection` resolves any Gallica URL or ARK into either a
+periodical or a document, enumerates the issues of a periodical and the views
+of a document; `download` streams files to disk through a temporary file.
+
+The client throttles requests (250 ms apart by default), bounds concurrent
+downloads (2 by default) and retries transient failures (HTTP 429/5xx,
+timeouts) with exponential backoff, honouring `Retry-After`.
+
+```rust
+use gallica::{Client, Resource, iiif::ImageRequest, download::DownloadOptions};
+
+let client = Client::builder()
+    .user_agent("my-downloader/0.1 (contact@example.org)")
+    .build()?;
+
+match Resource::parse("https://gallica.bnf.fr/ark:/12148/cb327110547/")? {
+    Resource::Periodical { ark } => {
+        for issue in client.periodical_issues(&ark, Some(1900..=1901)).await? {
+            println!("{} {:?} {}", issue.ark, issue.date(), issue.label);
+        }
+    }
+    Resource::Document { ark, .. } => {
+        for view in client.document_views(&ark).await? {
+            let path = format!("{}/f{}.jpg", ark.name(), view.view);
+            client.download_iiif_image(&ark, view.view, &ImageRequest::full(), &path, &DownloadOptions::new()).await?;
+        }
+    }
+}
+```
+
+Accepted inputs include bare names (`bpt6k961287k`), identifiers
+(`ark:/12148/cb327110547/date`) and Gallica URLs with any qualifier
+(`.../bpt6k961287k/f3.item.zoom?rk=...`, `.../bpt6k961287k.texteBrut`, IIIF
+image URLs). Names starting with `cb` are periodical titles.
+
+### Try it
+
+```sh
+cargo run --example inspect -- https://gallica.bnf.fr/ark:/12148/cb327110547/
+cargo run --example inspect -- https://gallica.bnf.fr/ark:/12148/bpt6k961287k --download
+```
+
+## Building
+
+With Nix (flakes), `nix develop` gives a shell with the toolchain pinned by
+`rust-toolchain.toml` through [rust-overlay](https://github.com/oxalica/rust-overlay);
+`nix build` builds and tests the crate. Without Nix, any recent stable Rust
+(edition 2024) works:
+
+```sh
+cargo build
+cargo test
+```
+
+Tests run against a local mock server; nothing talks to gallica.bnf.fr.
+
+## Being a good citizen
+
+Gallica is a public service. Keep the default throttling, identify your
+client with a `User-Agent` that includes a way to contact you, and read the
+[conditions of use](https://gallica.bnf.fr/html/und/conditions-dutilisation-des-contenus-de-gallica).

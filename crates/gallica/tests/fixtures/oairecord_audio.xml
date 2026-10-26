@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?><results ResultsGenerationSearchTime="0:00:00.037" countResults="1" resultType="CVOAIRecordSearchService" searchTime="">
+<visibility_rights>all</visibility_rights>
+<notice>
+<record>
+<header>
+<identifier>oai:bnf.fr:gallica/ark:/12148/bpt6k1279113</identifier>
+<datestamp>2016-09-30</datestamp>
+<setSpec>gallica:typedoc:audio</setSpec>
+</header>
+<metadata>
+<oai_dc:dc xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:oai_dc="http://www.openarchives.org/OAI/2.0/oai_dc/">
+<dc:identifier>https://gallica.bnf.fr/ark:/12148/bpt6k1279113</dc:identifier>
+<dc:title>[Archives de la parole]. , Discours d'inauguration des Archives de la parole / M. Brunot, aut., participant</dc:title>
+<dc:type xml:lang="eng">sound</dc:type>
+</oai_dc:dc>
+</metadata>
+</record>
+</notice>
+<provenance>bnf.fr</provenance>
+<typedoc>sonore</typedoc>
+<nqamoyen>0.0</nqamoyen>
+<title>[Archives de la parole]</title>
+<date nbIssue="1">1911</date>
+<sounds>
+<page num="0">
+<media>
+<title>Plage 1</title>
+<file>https://gallica.bnf.fr/ark:/12148/bpt6k1279113/f1.audio</file>
+</media>
+</page>
+<page num="1">
+<media>
+<title>Plage 1</title>
+<file>https://gallica.bnf.fr/ark:/12148/bpt6k1279113/f2.audio</file>
+</media>
+</page>
+</sounds>
+<first_indexation_date>10/03/2009</first_indexation_date>
+</results>

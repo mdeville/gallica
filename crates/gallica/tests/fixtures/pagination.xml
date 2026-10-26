@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<livre>
+ <structure>
+ <firstDisplayedPage>12</firstDisplayedPage>
+ <hasToc>true</hasToc>
+ <TocLocation>328</TocLocation>
+ <hasContent>true</hasContent>
+ <idUPN>NUMM-5738219</idUPN>
+ <nbVueImages>3</nbVueImages>
+ </structure>
+ <pages>
+ <page>
+ <numero>NP</numero>
+ <ordre>1</ordre>
+ <pagination_type>N</pagination_type>
+ </page>
+ <page>
+ <numero>1</numero>
+ <ordre>2</ordre>
+ <pagination_type>A</pagination_type>
+ <legend>Le Louvre. N ° Atget : 5169.</legend>
+ </page>
+ <page>
+ <numero>iv</numero>
+ <ordre>3</ordre>
+ <pagination_type>R</pagination_type>
+ </page>
+ </pages>
+</livre>

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<results ResultsGenerationSearchTime="0:00:00.050" countResults="2" searchTime="50">
+ <query>hugo</query>
+ <items>
+ <item>
+ <altoid/>
+ <p_id>PAG_357</p_id>
+ <p_width/>
+ <p_height/>
+ <content>e V. <span class='highlight'>HUGO</span></content>
+ <events/>
+ </item>
+ <item>
+ <altoid/>
+ <p_id>PAG_173</p_id>
+ <p_width/>
+ <p_height/>
+ <content>quelque chose comme si on envoyait à <span class='highlight'>Hugo</span> une petite grammaire</content>
+ <events/>
+ </item>
+ </items>
+</results>

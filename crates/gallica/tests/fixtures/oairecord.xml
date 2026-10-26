@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<results countResults="1" resultType="LuceneOAIRecordSearch" searchTime="0:00:00.001">
+ <notice>
+ <record xmlns="http://www.openarchives.org/OAI/2.0/">
+ <header>
+ <identifier>oai:bnf.fr:gallica/ark:/12148/bpt6k5738219s</identifier>
+ <datestamp>2012-01-27</datestamp>
+ <setSpec>gallica:theme:8:84</setSpec>
+ <setSpec>gallica:typedoc:monographies</setSpec>
+ </header>
+ <metadata>
+ <oai_dc:dc xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:oai_dc="http://www.openarchives.org/OAI/2.0/oai_dc/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+ <dc:identifier>https://gallica.bnf.fr/ark:/12148/bpt6k5738219s</dc:identifier>
+ <dc:title>La plage d'Etretat par l'auteur de "Monsieur X et Mme ***"</dc:title>
+ <dc:publisher>Michel Levy (Paris)</dc:publisher>
+ <dc:date>1868</dc:date>
+ <dc:format>In-18</dc:format>
+ <dc:format>Nombre total de vues : 374</dc:format>
+ <dc:language>fre</dc:language>
+ <dc:relation>Notice du catalogue : http://catalogue.bnf.fr/ark:/12148/cb33539190h</dc:relation>
+ <dc:type xml:lang="eng">text</dc:type>
+ <dc:type xml:lang="fre">monographie imprimée</dc:type>
+ <dc:type xml:lang="eng">printed monograph</dc:type>
+ <dc:format>application/pdf</dc:format>
+ <dc:source>Bibliothèque nationale de France, département Littérature et art, Y2-59413</dc:source>
+ <dc:rights xml:lang="fre">domaine public</dc:rights>
+ <dc:rights xml:lang="eng">public domain</dc:rights>
+ </oai_dc:dc>
+ </metadata>
+ </record>
+ </notice>
+ <mode_indexation>text</mode_indexation>
+ <nqamoyen>092.57</nqamoyen>
+ <provenance>bnf.fr</provenance>
+ <source>Bibliothèque nationale de France, département Littérature et art, Y2-59413</source>
+ <typedoc>monographies</typedoc>
+ <date nbIssue="1">1868</date>
+ <title>La plage d'Etretat par l'auteur de "Monsieur X et Mme ***"</title>
+ <sdewey>84</sdewey>
+ <first_indexation_date>10/03/2009</first_indexation_date>
+</results>

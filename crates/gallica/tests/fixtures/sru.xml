@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<srw:searchRetrieveResponse xmlns="https://gallica.bnf.fr/namespaces/gallica/" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:oai_dc="http://www.openarchives.org/OAI/2.0/oai_dc/" xmlns:srw="http://www.loc.gov/zing/srw/">
+ <srw:version>1.2</srw:version>
+ <srw:echoedSearchRetrieveRequest>
+ <srw:query>(dc.creator all "molière") and (dc.type all "monographie")</srw:query>
+ <srw:version>1.2</srw:version>
+ </srw:echoedSearchRetrieveRequest>
+ <srw:numberOfRecords>3</srw:numberOfRecords>
+ <srw:records>
+ <srw:record>
+ <srw:recordSchema>http://www.openarchives.org/OAI/2.0/OAIdc.xsd</srw:recordSchema>
+ <srw:recordPacking>xml</srw:recordPacking>
+ <srw:recordData>
+ <oai_dc:dc>
+ <dc:contributor>Lemaistre, Félix. Éditeur scientifique</dc:contributor>
+ <dc:creator>Molière (1622-1673)</dc:creator>
+ <dc:date>1867</dc:date>
+ <dc:identifier>https://gallica.bnf.fr/ark:/12148/bpt6k5738219s</dc:identifier>
+ <dc:title>Oeuvres complètes de Molière. Tome 1</dc:title>
+ <dc:type>monographie imprimée</dc:type>
+ </oai_dc:dc>
+ </srw:recordData>
+ <srw:recordPosition>1</srw:recordPosition>
+ <srw:extraRecordData>
+ <link>https://gallica.bnf.fr/ark:/12148/bpt6k5738219s</link>
+ <typedoc>monographie</typedoc>
+ <nqamoyen>95.5</nqamoyen>
+ <thumbnail>https://gallica.bnf.fr/ark:/12148/bpt6k5738219s.thumbnail</thumbnail>
+ <provenance>bnf.fr</provenance>
+ </srw:extraRecordData>
+ </srw:record>
+ <srw:record>
+ <srw:recordData>
+ <oai_dc:dc>
+ <dc:identifier>https://gallica.bnf.fr/ark:/12148/bpt6k961287k</dc:identifier>
+ <dc:title>Oeuvres complètes de Molière. Tome 2</dc:title>
+ </oai_dc:dc>
+ </srw:recordData>
+ <srw:recordPosition>2</srw:recordPosition>
+ </srw:record>
+ </srw:records>
+ <srw:nextRecordPosition>3</srw:nextRecordPosition>
+</srw:searchRetrieveResponse>

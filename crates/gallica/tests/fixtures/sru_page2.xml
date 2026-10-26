@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<srw:searchRetrieveResponse xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:oai_dc="http://www.openarchives.org/OAI/2.0/oai_dc/" xmlns:srw="http://www.loc.gov/zing/srw/">
+ <srw:version>1.2</srw:version>
+ <srw:numberOfRecords>3</srw:numberOfRecords>
+ <srw:records>
+ <srw:record>
+ <srw:recordData>
+ <oai_dc:dc>
+ <dc:identifier>https://gallica.bnf.fr/ark:/12148/bpt6k1234567z</dc:identifier>
+ <dc:title>Oeuvres complètes de Molière. Tome 3</dc:title>
+ </oai_dc:dc>
+ </srw:recordData>
+ <srw:recordPosition>3</srw:recordPosition>
+ </srw:record>
+ </srw:records>
+</srw:searchRetrieveResponse>

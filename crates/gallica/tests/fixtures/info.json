@@ -1,0 +1,10 @@
+{
+  "@context": "http://iiif.io/api/image/2/context.json",
+  "@id": "https://gallica.bnf.fr/iiif/ark:/12148/bpt6k5738219s/f1",
+  "protocol": "http://iiif.io/api/image",
+  "width": 2385,
+  "height": 3700,
+  "sizes": [{"width": 149, "height": 231}, {"width": 298, "height": 462}],
+  "tiles": [{"width": 1024, "scaleFactors": [1, 2, 4, 8, 16]}],
+  "profile": ["http://iiif.io/api/image/2/level2.json"]
+}
