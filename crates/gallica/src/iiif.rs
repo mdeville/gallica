@@ -26,7 +26,7 @@ use crate::error::{Error, Result};
 use crate::quota::QuotaClass;
 
 /// The region of the image to return.
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, serde::Serialize, serde::Deserialize)]
 pub enum Region {
     /// The whole image.
     Full,
@@ -75,7 +75,7 @@ impl fmt::Display for Region {
 }
 
 /// The size of the returned image.
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, serde::Serialize, serde::Deserialize)]
 pub enum Size {
     /// The full size of the region (`full`).
     Full,
@@ -108,7 +108,7 @@ impl fmt::Display for Size {
 }
 
 /// Rotation of the returned image.
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct Rotation {
     /// Degrees clockwise, 0-360.
     pub degrees: f32,
@@ -135,7 +135,8 @@ impl fmt::Display for Rotation {
 }
 
 /// Quality of the returned image.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "lowercase")]
 pub enum Quality {
     /// The image as stored (Gallica's default, IIIF 1.x/2.0 name).
     Native,
@@ -162,7 +163,8 @@ impl fmt::Display for Quality {
 }
 
 /// Output format of the returned image.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "lowercase")]
 pub enum Format {
     /// JPEG.
     Jpg,
@@ -196,7 +198,7 @@ impl fmt::Display for Format {
 }
 
 /// The parameters of an IIIF image request.
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct ImageRequest {
     /// Region.
     pub region: Region,

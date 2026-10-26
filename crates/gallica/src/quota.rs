@@ -9,11 +9,16 @@
 use std::collections::VecDeque;
 use std::time::Duration;
 
+use std::sync::Arc;
+
 use tokio::sync::Mutex;
 use tokio::time::Instant;
 
+/// Called when a request has to wait for a quota: `(class, wait)`.
+pub type QuotaWaitHook = Arc<dyn Fn(QuotaClass, Duration) + Send + Sync>;
+
 /// The family a request belongs to for quota purposes.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 #[non_exhaustive]
 pub enum QuotaClass {
     /// Metadata and small answers: SRU, Document services, IIIF `info.json`
@@ -35,7 +40,7 @@ pub enum QuotaClass {
 /// The defaults are the figures published by the BnF. Use
 /// [`Quotas::unlimited`] to disable them (for a mock server, or if the BnF
 /// grants you a higher quota).
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct Quotas {
     /// IIIF images in `full/full` mode or larger than 1000 px (BnF: 5).
     pub full_res_images_per_minute: Option<u32>,
@@ -123,7 +128,7 @@ impl RateLimiter {
     }
 
     /// Waits until a request may be made, then records it.
-    pub(crate) async fn acquire(&self) {
+    pub(crate) async fn acquire(&self, class: QuotaClass, hook: Option<&QuotaWaitHook>) {
         loop {
             let wait = {
                 let mut history = self.history.lock().await;
@@ -140,7 +145,10 @@ impl RateLimiter {
                 }
                 WINDOW - now.duration_since(*history.front().expect("non-empty"))
             };
-            tracing::debug!(?wait, "quota reached, waiting");
+            tracing::debug!(?class, ?wait, "quota reached, waiting");
+            if let Some(h) = hook {
+                h(class, wait);
+            }
             tokio::time::sleep(wait).await;
         }
     }
@@ -187,11 +195,13 @@ pub(crate) struct QuotaSet {
     pdf: Option<RateLimiter>,
     text: Option<RateLimiter>,
     bandwidth: Option<BandwidthLimiter>,
+    hook: Option<QuotaWaitHook>,
 }
 
 impl QuotaSet {
-    pub(crate) fn new(q: &Quotas) -> Self {
+    pub(crate) fn new(q: &Quotas, hook: Option<QuotaWaitHook>) -> Self {
         QuotaSet {
+            hook,
             full_res: q.full_res_images_per_minute.map(RateLimiter::new),
             highres: q.highres_previews_per_minute.map(RateLimiter::new),
             pdf: q.pdfs_per_minute.map(RateLimiter::new),
@@ -209,7 +219,7 @@ impl QuotaSet {
             QuotaClass::Text => self.text.as_ref(),
         };
         if let Some(l) = limiter {
-            l.acquire().await;
+            l.acquire(class, self.hook.as_ref()).await;
         }
     }
 
@@ -258,17 +268,17 @@ mod tests {
         let limiter = RateLimiter::new(3);
         let start = Instant::now();
         for _ in 0..3 {
-            limiter.acquire().await;
+            limiter.acquire(QuotaClass::Pdf, None).await;
         }
         assert_eq!(Instant::now(), start);
-        limiter.acquire().await;
+        limiter.acquire(QuotaClass::Pdf, None).await;
         assert!(Instant::now() - start >= WINDOW);
         // The window has slid: two more go through, the third waits again.
         let t = Instant::now();
-        limiter.acquire().await;
-        limiter.acquire().await;
+        limiter.acquire(QuotaClass::Pdf, None).await;
+        limiter.acquire(QuotaClass::Pdf, None).await;
         assert_eq!(Instant::now(), t);
-        limiter.acquire().await;
+        limiter.acquire(QuotaClass::Pdf, None).await;
         assert!(Instant::now() - t >= Duration::from_secs(1));
     }
 

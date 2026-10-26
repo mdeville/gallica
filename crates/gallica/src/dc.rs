@@ -5,7 +5,7 @@ use crate::xml::Element;
 
 /// A Dublin Core (`oai_dc`) record. Every field may repeat, so each one is a
 /// list, in document order.
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[non_exhaustive]
 pub struct DublinCore {
     /// `dc:title`

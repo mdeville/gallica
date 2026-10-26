@@ -19,7 +19,7 @@ use crate::xml::{Element, parse_bool};
 // ---------------------------------------------------------------------------
 
 /// The years for which a periodical has at least one issue online.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[non_exhaustive]
 pub struct IssueYears {
     /// The periodical ARK as echoed by the service.
@@ -33,7 +33,7 @@ pub struct IssueYears {
 }
 
 /// One issue of a periodical.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[non_exhaustive]
 pub struct Issue {
     /// The ARK of the digitised issue.
@@ -54,7 +54,9 @@ impl Issue {
 }
 
 /// A calendar date.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize,
+)]
 pub struct Date {
     /// Year.
     pub year: u16,
@@ -108,7 +110,7 @@ impl std::fmt::Display for Date {
 }
 
 /// The issues of a periodical for one year.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[non_exhaustive]
 pub struct IssueList {
     /// The periodical ARK as echoed by the service.
@@ -124,7 +126,7 @@ pub struct IssueList {
 // ---------------------------------------------------------------------------
 
 /// The bibliographic record of a document, from the `OAIRecord` service.
-#[derive(Debug, Clone, Default, PartialEq)]
+#[derive(Debug, Clone, Default, PartialEq, serde::Serialize, serde::Deserialize)]
 #[non_exhaustive]
 pub struct OaiRecord {
     /// OAI identifier, e.g. `oai:bnf.fr:gallica/ark:/12148/bpt6k5738219s`.
@@ -182,7 +184,7 @@ impl OaiRecord {
 }
 
 /// An audio track attached to a page.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[non_exhaustive]
 pub struct MediaTrack {
     /// Page (view) number the track belongs to.
@@ -198,7 +200,7 @@ pub struct MediaTrack {
 // ---------------------------------------------------------------------------
 
 /// The structure and page list of a document, from the `Pagination` service.
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[non_exhaustive]
 pub struct Pagination {
     /// The view Gallica opens by default (title page, cover). `<1` means first.
@@ -227,7 +229,7 @@ impl Pagination {
 }
 
 /// One page (view) of a document.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[non_exhaustive]
 pub struct Page {
     /// Sequential view number; the value to use in `f<N>` qualifiers.
@@ -260,7 +262,7 @@ impl Page {
 // ---------------------------------------------------------------------------
 
 /// Results of a full text search inside one document.
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[non_exhaustive]
 pub struct ContentSearchResults {
     /// The query as echoed by the service.
@@ -272,7 +274,7 @@ pub struct ContentSearchResults {
 }
 
 /// A match of a full text search.
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[non_exhaustive]
 pub struct ContentMatch {
     /// Page (view) number, parsed from `PAG_<n>`.
@@ -292,7 +294,7 @@ pub struct ContentMatch {
 }
 
 /// The bounding box of an OCR word, in master image pixels.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[non_exhaustive]
 pub struct WordBox {
     /// ALTO string identifier.
@@ -312,7 +314,7 @@ pub struct WordBox {
 // ---------------------------------------------------------------------------
 
 /// Format of a table of contents answer.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum TocFormat {
     /// Legacy HTML with `allerA(...)` links.
     Html,
@@ -321,7 +323,7 @@ pub enum TocFormat {
 }
 
 /// A table of contents.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[non_exhaustive]
 pub struct Toc {
     /// Which format the service returned.
@@ -333,7 +335,7 @@ pub struct Toc {
 }
 
 /// One entry of a table of contents.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[non_exhaustive]
 pub struct TocEntry {
     /// Entry text.
@@ -345,7 +347,8 @@ pub struct TocEntry {
 }
 
 /// Preview image sizes served by Gallica outside IIIF.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "lowercase")]
 pub enum PreviewSize {
     /// One side is 128 or 192 px.
     Thumbnail,

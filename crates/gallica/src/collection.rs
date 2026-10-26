@@ -56,7 +56,7 @@ impl Resource {
 }
 
 /// A view of a document, ready to be fetched.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[non_exhaustive]
 pub struct View {
     /// The document ARK.
@@ -191,7 +191,7 @@ mod tests {
 /// The default is the `HighRes` preview: pre-computed on Gallica's side,
 /// readable, and fast enough to fetch whole collections. Full resolution is an
 /// explicit opt-in.
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, serde::Serialize, serde::Deserialize)]
 #[non_exhaustive]
 pub enum ImageVariant {
     /// The full image at master resolution through IIIF.

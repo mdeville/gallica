@@ -16,7 +16,7 @@ use url::Url;
 
 use crate::ark::GALLICA_BASE_URL;
 use crate::error::{Error, Result};
-use crate::quota::{QuotaClass, QuotaSet, Quotas};
+use crate::quota::{QuotaClass, QuotaSet, QuotaWaitHook, Quotas};
 
 /// Default `User-Agent` sent to Gallica.
 pub const DEFAULT_USER_AGENT: &str = concat!(
@@ -64,7 +64,7 @@ impl RetryPolicy {
 }
 
 /// Builder for [`Client`].
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct ClientBuilder {
     base_url: Url,
     user_agent: String,
@@ -74,6 +74,17 @@ pub struct ClientBuilder {
     max_concurrent_downloads: usize,
     retry: RetryPolicy,
     quotas: Quotas,
+    on_quota_wait: Option<QuotaWaitHook>,
+}
+
+impl std::fmt::Debug for ClientBuilder {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ClientBuilder")
+            .field("base_url", &self.base_url.as_str())
+            .field("user_agent", &self.user_agent)
+            .field("quotas", &self.quotas)
+            .finish_non_exhaustive()
+    }
 }
 
 impl Default for ClientBuilder {
@@ -87,6 +98,7 @@ impl Default for ClientBuilder {
             max_concurrent_downloads: 2,
             retry: RetryPolicy::default(),
             quotas: Quotas::default(),
+            on_quota_wait: None,
         }
     }
 }
@@ -147,6 +159,16 @@ impl ClientBuilder {
         self
     }
 
+    /// Called whenever a request has to wait for a quota, with the class and
+    /// the duration of the wait. Useful to show the wait in a UI.
+    pub fn on_quota_wait(
+        mut self,
+        f: impl Fn(QuotaClass, Duration) + Send + Sync + 'static,
+    ) -> Self {
+        self.on_quota_wait = Some(std::sync::Arc::new(f));
+        self
+    }
+
     /// Builds the client.
     pub fn build(self) -> Result<Client> {
         let mut headers = HeaderMap::new();
@@ -168,7 +190,7 @@ impl ClientBuilder {
                 retry: self.retry,
                 throttle: Throttle::new(self.min_request_interval),
                 download_permits: Semaphore::new(self.max_concurrent_downloads),
-                quotas: QuotaSet::new(&self.quotas),
+                quotas: QuotaSet::new(&self.quotas, self.on_quota_wait),
             }),
         })
     }

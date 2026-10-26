@@ -398,3 +398,16 @@ mod url_tests {
         );
     }
 }
+
+impl serde::Serialize for Ark {
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        serializer.serialize_str(&self.to_string())
+    }
+}
+
+impl<'de> serde::Deserialize<'de> for Ark {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        let s = String::deserialize(deserializer)?;
+        Ark::parse(&s).map_err(serde::de::Error::custom)
+    }
+}
