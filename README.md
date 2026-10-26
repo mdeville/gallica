@@ -40,7 +40,10 @@ Files land in `<out>/<ark> - <title>/<year>/<date> <ark>/f0001.jpg` with a
 `metadata.json` per issue and a `done.json` marker; running the same target
 again resumes without re-requesting finished issues. Settings (contact address,
 output folder, image variant, quotas) persist in the platform configuration
-directory as `config.toml`.
+directory as `config.toml` (`~/.config/gallica/config.toml` on Linux), or the
+file given with `--config`. `GALLICA_*` environment variables override the file,
+e.g. `GALLICA_CONTACT=you@example.org`; use `__` for nested keys
+(`GALLICA_QUOTAS__TEXTS_PER_MINUTE=10`).
 
 ## The SDK
 

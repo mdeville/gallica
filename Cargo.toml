@@ -19,6 +19,7 @@ thiserror = "2"
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "fs", "io-util", "sync", "time"] }
 tokio-util = "0.7"
 toml = "0.9"
+config = { version = "0.15", default-features = false, features = ["toml"] }
 directories = "6"
 clap = { version = "4", features = ["derive", "wrap_help"] }
 indicatif = "0.18"

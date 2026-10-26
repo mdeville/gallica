@@ -4,9 +4,15 @@ use std::fmt;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 
+use config::{Config, Environment, File, FileFormat};
 use gallica::document::PreviewSize;
 use gallica::{ClientBuilder, DEFAULT_USER_AGENT, ImageVariant, QuotaClass, Quotas};
 use serde::{Deserialize, Serialize};
+
+/// Prefix of the environment variables that override the file:
+/// `GALLICA_CONTACT`, `GALLICA_OUTPUT_DIR`, `GALLICA_QUOTAS__TEXTS_PER_MINUTE`
+/// (`__` separates nested keys).
+pub const ENV_PREFIX: &str = "GALLICA";
 
 /// Errors while loading or saving settings.
 #[derive(Debug, thiserror::Error)]
@@ -23,7 +29,7 @@ pub enum SettingsError {
         #[source]
         source: std::io::Error,
     },
-    /// The file is not valid TOML for our settings.
+    /// The file or the environment does not hold valid settings.
     #[error("{path}: {message}")]
     Parse {
         /// The file.
@@ -34,6 +40,9 @@ pub enum SettingsError {
 }
 
 /// User settings, persisted as TOML in the platform configuration directory.
+///
+/// Loading layers, last wins: the defaults, the file, then the `GALLICA_*`
+/// environment variables (see [`ENV_PREFIX`]).
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct Settings {
@@ -84,28 +93,32 @@ impl Settings {
             .map(|d| d.config_dir().join("config.toml"))
     }
 
-    /// Loads the settings from the configuration file; defaults when absent.
+    /// Loads the settings from the configuration file (defaults when absent)
+    /// and the environment.
     pub fn load() -> Result<Settings, SettingsError> {
         let path = Self::config_path().ok_or(SettingsError::NoConfigDir)?;
         Self::load_from(&path)
     }
 
-    /// Loads the settings from a file; defaults when absent.
+    /// Loads the settings from a TOML file (defaults when absent) and the
+    /// environment.
     pub fn load_from(path: &Path) -> Result<Settings, SettingsError> {
-        let text = match std::fs::read_to_string(path) {
-            Ok(t) => t,
-            Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(Settings::default()),
-            Err(e) => {
-                return Err(SettingsError::Io {
-                    path: path.to_path_buf(),
-                    source: e,
-                });
-            }
-        };
-        toml::from_str(&text).map_err(|e| SettingsError::Parse {
+        Self::load_with(path, Environment::with_prefix(ENV_PREFIX))
+    }
+
+    fn load_with(path: &Path, env: Environment) -> Result<Settings, SettingsError> {
+        let parse = |e: config::ConfigError| SettingsError::Parse {
             path: path.to_path_buf(),
             message: e.to_string(),
-        })
+        };
+        // Missing keys take their defaults through `#[serde(default)]`.
+        Config::builder()
+            .add_source(File::from(path).format(FileFormat::Toml).required(false))
+            .add_source(env.prefix_separator("_").separator("__").try_parsing(true))
+            .build()
+            .map_err(parse)?
+            .try_deserialize()
+            .map_err(parse)
     }
 
     /// Saves the settings to the configuration file.
@@ -341,5 +354,43 @@ mod tests {
         assert_eq!(Settings::load_from(&path).unwrap(), s);
         assert!(s.user_agent().ends_with("contact:me@example.org"));
         assert!(!Settings::default().has_contact());
+    }
+
+    #[test]
+    fn environment_overrides_the_file() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("config");
+        std::fs::write(&path, "contact = \"file@example.org\"\noverwrite = true\n").unwrap();
+        let env = |vars: &[(&str, &str)]| {
+            Environment::with_prefix(ENV_PREFIX).source(Some(
+                vars.iter()
+                    .map(|(k, v)| (k.to_string(), v.to_string()))
+                    .collect(),
+            ))
+        };
+        let s = Settings::load_with(&path, env(&[])).unwrap();
+        assert_eq!(s.contact.as_deref(), Some("file@example.org"));
+        assert!(s.overwrite);
+
+        let s = Settings::load_with(
+            &path,
+            env(&[
+                ("GALLICA_CONTACT", "env@example.org"),
+                ("GALLICA_OUTPUT_DIR", "/tmp/out"),
+                ("GALLICA_VARIANT", "width:800"),
+                ("GALLICA_MAX_ISSUES", "3"),
+                ("GALLICA_QUOTAS__TEXTS_PER_MINUTE", "10"),
+            ]),
+        )
+        .unwrap();
+        assert_eq!(s.contact.as_deref(), Some("env@example.org"));
+        assert_eq!(s.output_dir, PathBuf::from("/tmp/out"));
+        assert_eq!(s.variant, VariantSpec::Width(800));
+        assert_eq!(s.max_issues, Some(3));
+        assert_eq!(s.quotas.unwrap().texts_per_minute, Some(10));
+        assert!(s.overwrite, "the file still applies");
+
+        let err = Settings::load_with(&path, env(&[("GALLICA_VARIANT", "huge")])).unwrap_err();
+        assert!(err.to_string().contains("unknown variant"), "{err}");
     }
 }

@@ -29,7 +29,8 @@ resume later. The same workflow is offered in three ways:
   Windows (and the web, which we do not target) through `winit`.
   `egui_extras` provides image loading for page previews.
 - **Headless:** `clap` for arguments, `indicatif` for progress bars.
-- **Shared:** `tokio` runtime, `serde` + `toml` for settings, `serde_json` for
+- **Shared:** `tokio` runtime, `config` to load
+  settings (file and environment) and `toml` to save them, `serde_json` for
   job files, `directories` for platform config paths, `tracing` for every
   log line (see 4.7), `tokio-util` for cancellation tokens.
 
@@ -127,7 +128,12 @@ pub enum Event {
 
 Persisted as TOML in the platform config directory
 (`directories::ProjectDirs::from("", "", "gallica")`, e.g.
-`~/.config/gallica/config.toml`), overridable per run from the UI or CLI flags.
+`~/.config/gallica/config.toml`). Loading goes through the `config` crate,
+layering, last wins: the defaults, the file (optional), then `GALLICA_*`
+environment variables (`GALLICA_CONTACT`, `GALLICA_OUTPUT_DIR`, and `__` for
+nested keys: `GALLICA_QUOTAS__TEXTS_PER_MINUTE`). The UI and CLI flags then
+override per run. Saving writes the TOML file, including any values that came
+from the environment.
 
 ```toml
 contact = "you@example.org"          # appended to the User-Agent; required before a run
@@ -281,8 +287,8 @@ gallica download <target> --out DIR [same flags] [--yes] [--save-text]
 gallica tui [<target>]                         the terminal UI
 ```
 
-All subcommands read `config.toml`; `--contact` is required if the file has
-none. `download` refuses full resolution without `--yes` after printing the
+All subcommands read `config.toml` and the `GALLICA_*` variables; `--contact`
+is required if neither sets one. `download` refuses full resolution without `--yes` after printing the
 estimate. Exit codes: 0 success, 1 some items failed, 2 bad arguments,
 3 blocked by Gallica (challenge or 403). `-v` and `--debug` raise the log
 level (see 4.7).
