@@ -31,7 +31,7 @@ eframe = { version = "0.37", default-features = false, features = ["default_font
 egui = "0.37"
 egui_extras = { version = "0.37", features = ["image"] }
 image = { version = "0.25", default-features = false, features = ["jpeg", "png"] }
-rfd = { version = "0.15", default-features = false, features = ["xdg-portal", "tokio"] }
+rfd = { version = "0.17", default-features = false, features = ["xdg-portal", "wayland"] }
 tracing = "0.1"
 url = "2"
 
