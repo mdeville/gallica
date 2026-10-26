@@ -496,3 +496,47 @@ fn resource_parsing() {
     let r = Resource::parse("https://gallica.bnf.fr/ark:/12148/bpt6k961287k").unwrap();
     assert!(matches!(r, Resource::Document { view: None, .. }));
 }
+
+#[tokio::test]
+async fn download_view_with_variants() {
+    let server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/ark:/12148/bpt6k961287k/f2.highres"))
+        .respond_with(
+            ResponseTemplate::new(200).set_body_raw(b"\xFF\xD8highres".to_vec(), "image/jpeg"),
+        )
+        .expect(1)
+        .mount(&server)
+        .await;
+    Mock::given(method("GET"))
+        .and(path(
+            "/iiif/ark:/12148/bpt6k961287k/f2/full/full/0/native.jpg",
+        ))
+        .respond_with(
+            ResponseTemplate::new(200).set_body_raw(b"\xFF\xD8full".to_vec(), "image/jpeg"),
+        )
+        .expect(1)
+        .mount(&server)
+        .await;
+    let c = client(&server).await;
+    let ark = Ark::new("bpt6k961287k").unwrap();
+    let dir = tempfile::tempdir().unwrap();
+
+    let variant = gallica::ImageVariant::default();
+    let path = dir.path().join(variant.file_name(2));
+    let out = c
+        .download_view(&ark, 2, &variant, &path, &DownloadOptions::new())
+        .await
+        .unwrap();
+    assert_eq!(out.bytes, 9);
+    assert_eq!(
+        std::fs::read(dir.path().join("f0002.jpg")).unwrap(),
+        b"\xFF\xD8highres"
+    );
+
+    let bytes = c
+        .view_image(&ark, 2, &gallica::ImageVariant::full())
+        .await
+        .unwrap();
+    assert_eq!(&bytes[..], b"\xFF\xD8full");
+}

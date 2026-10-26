@@ -32,6 +32,13 @@ its own side: 5 full-resolution IIIF images, 50 `highres` previews, 4 PDFs
 and 5 `texteBrut` exports per minute, and 832 KB/s of download bandwidth.
 See `Quotas` to adjust them.
 
+How page images are fetched is a single choice, `ImageVariant`: the
+`highres` preview by default (about 1024×1536 px, 50 per minute), an IIIF image
+capped to a width (up to 1000 px stays outside the strict quota), or the full
+master resolution as an explicit opt-in (5 per minute, so a whole newspaper
+title takes days). `Quotas::minimum_duration` estimates the time a given
+number of requests needs under those limits.
+
 ```rust
 use gallica::{Client, Resource, iiif::ImageRequest, download::DownloadOptions};
 

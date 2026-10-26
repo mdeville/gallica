@@ -73,6 +73,31 @@ impl Quotas {
     }
 }
 
+impl Quotas {
+    /// The per-minute limit that applies to a class, if any.
+    pub fn per_minute(&self, class: QuotaClass) -> Option<u32> {
+        match class {
+            QuotaClass::Default => None,
+            QuotaClass::FullResImage => self.full_res_images_per_minute,
+            QuotaClass::HighResPreview => self.highres_previews_per_minute,
+            QuotaClass::Pdf => self.pdfs_per_minute,
+            QuotaClass::Text => self.texts_per_minute,
+        }
+    }
+
+    /// The least time `count` requests of a class can take under the
+    /// per-minute limit, ignoring transfer time. `None` when unlimited.
+    pub fn minimum_duration(&self, class: QuotaClass, count: u64) -> Option<Duration> {
+        let limit = self.per_minute(class)?.max(1) as u64;
+        if count <= limit {
+            return Some(Duration::ZERO);
+        }
+        // Each full window of `limit` requests after the first costs one minute.
+        let windows = count.div_ceil(limit) - 1;
+        Some(Duration::from_secs(60 * windows))
+    }
+}
+
 impl Default for Quotas {
     fn default() -> Self {
         Self::bnf()
@@ -196,6 +221,37 @@ impl QuotaSet {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn minimum_duration_estimates() {
+        let q = Quotas::bnf();
+        assert_eq!(q.minimum_duration(QuotaClass::Default, 10_000), None);
+        assert_eq!(
+            q.minimum_duration(QuotaClass::FullResImage, 5),
+            Some(Duration::ZERO)
+        );
+        assert_eq!(
+            q.minimum_duration(QuotaClass::FullResImage, 6),
+            Some(Duration::from_secs(60))
+        );
+        assert_eq!(
+            q.minimum_duration(QuotaClass::FullResImage, 10),
+            Some(Duration::from_secs(60))
+        );
+        assert_eq!(
+            q.minimum_duration(QuotaClass::FullResImage, 11),
+            Some(Duration::from_secs(120))
+        );
+        // 1186 issues x 8 pages at full resolution: about a day and a half.
+        let d = q
+            .minimum_duration(QuotaClass::FullResImage, 1186 * 8)
+            .unwrap();
+        assert!(d > Duration::from_secs(30 * 3600));
+        assert_eq!(
+            Quotas::unlimited().minimum_duration(QuotaClass::Pdf, 100),
+            None
+        );
+    }
 
     #[tokio::test(start_paused = true)]
     async fn rate_limiter_blocks_past_the_limit() {

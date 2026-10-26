@@ -59,7 +59,7 @@ pub mod xml;
 
 pub use ark::{Ark, ArkKind, BNF_NAAN, GALLICA_BASE_URL};
 pub use client::{Client, ClientBuilder, DEFAULT_USER_AGENT, RetryPolicy};
-pub use collection::{Resource, View};
+pub use collection::{ImageVariant, Resource, View};
 pub use dc::DublinCore;
 pub use error::{ArkError, Error, Result};
 pub use quota::{QuotaClass, Quotas};
