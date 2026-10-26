@@ -111,7 +111,10 @@ cargo run --example inspect -- https://gallica.bnf.fr/ark:/12148/bpt6k961287k --
 With Nix (flakes), `nix develop` gives a shell with the toolchain pinned by
 `rust-toolchain.toml` through [rust-overlay](https://github.com/oxalica/rust-overlay);
 `nix build` builds and tests the command line and terminal UI (`gallica`),
-`nix build .#gallica-gui` the desktop GUI. Without Nix, any recent stable Rust
+`nix build .#gallica-gui` the desktop GUI. From Linux,
+`nix build .#gallica-tui-windows` and `.#gallica-gui-windows` cross compile
+self-contained Windows x86_64 executables (MinGW, tests not run). Without Nix,
+any recent stable Rust
 (edition 2024) works:
 
 ```sh
