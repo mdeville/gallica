@@ -5,8 +5,9 @@ let
 in
 rec {
   # The GUI (eframe/winit) links against, and dlopens, the windowing and GL
-  # libraries on Linux.
+  # libraries on Linux; rfd dlopens libdbus to reach the file chooser portal.
   gui = lib.optionals pkgs.stdenv.hostPlatform.isLinux [
+    pkgs.dbus
     pkgs.libxkbcommon
     pkgs.libGL
     pkgs.wayland
