@@ -5,7 +5,8 @@
 //! brittle. Instead we parse into a small tree and query it by local name.
 
 use quick_xml::Reader;
-use quick_xml::events::Event;
+use quick_xml::escape::{resolve_predefined_entity, unescape};
+use quick_xml::events::{BytesRef, Event};
 
 use crate::error::{Error, Result};
 
@@ -32,17 +33,24 @@ pub enum Node {
 impl Element {
     /// Parses an XML document and returns its root element.
     pub fn parse(xml: &str, context: &'static str) -> Result<Element> {
+        // Text arrives in pieces: entity references are events of their own,
+        // between the text around them. Pieces are gathered into `text` and
+        // trimmed once the run ends, so the reader must not trim each piece.
         let mut reader = Reader::from_str(xml);
-        reader.config_mut().trim_text(true);
+        reader.config_mut().trim_text(false);
         reader.config_mut().expand_empty_elements = false;
 
         let mut stack: Vec<Element> = Vec::new();
         let mut root: Option<Element> = None;
+        let mut text = String::new();
 
         loop {
             let event = reader.read_event().map_err(|e| {
                 Error::xml(context, format!("{e} at byte {}", reader.buffer_position()))
             })?;
+            if !matches!(event, Event::Text(_) | Event::GeneralRef(_)) {
+                flush_text(&mut text, &mut stack, &mut root);
+            }
             match event {
                 Event::Start(start) => {
                     let el = Element {
@@ -66,20 +74,12 @@ impl Element {
                         .ok_or_else(|| Error::xml(context, "unbalanced end tag"))?;
                     push_child(&mut stack, &mut root, Node::Element(el));
                 }
-                Event::Text(text) => {
-                    let s = match text.unescape() {
-                        Ok(s) => s.into_owned(),
-                        // Unknown entities (HTML ones in particular): keep raw text.
-                        Err(_) => String::from_utf8_lossy(text.as_ref()).into_owned(),
-                    };
-                    if !s.trim().is_empty() {
-                        push_child(&mut stack, &mut root, Node::Text(s));
-                    }
-                }
+                Event::Text(t) => text.push_str(&t.xml10_content()),
+                Event::GeneralRef(r) => push_entity(&mut text, &r),
                 Event::CData(cdata) => {
-                    let s = String::from_utf8_lossy(cdata.as_ref()).into_owned();
+                    let s = cdata.xml10_content();
                     if !s.trim().is_empty() {
-                        push_child(&mut stack, &mut root, Node::Text(s));
+                        push_child(&mut stack, &mut root, Node::Text(s.into_owned()));
                     }
                 }
                 Event::Eof => break,
@@ -203,11 +203,37 @@ fn push_child(stack: &mut [Element], root: &mut Option<Element>, node: Node) {
     }
 }
 
-fn local_name(raw: &[u8]) -> String {
-    let s = String::from_utf8_lossy(raw);
-    match s.rsplit_once(':') {
+/// Ends a text run: pushes it, trimmed, unless it is only whitespace.
+fn flush_text(text: &mut String, stack: &mut [Element], root: &mut Option<Element>) {
+    let trimmed = text.trim();
+    if !trimmed.is_empty() {
+        push_child(stack, root, Node::Text(trimmed.to_string()));
+    }
+    text.clear();
+}
+
+/// Appends a character or entity reference, decoded. Entities beyond XML's
+/// predefined five (HTML ones in particular) are kept as written.
+fn push_entity(text: &mut String, r: &BytesRef<'_>) {
+    if let Ok(Some(c)) = r.resolve_char_ref() {
+        text.push(c);
+        return;
+    }
+    let name: &str = r;
+    match resolve_predefined_entity(name) {
+        Some(s) => text.push_str(s),
+        None => {
+            text.push('&');
+            text.push_str(name);
+            text.push(';');
+        }
+    }
+}
+
+fn local_name(raw: &str) -> String {
+    match raw.rsplit_once(':') {
         Some((_, local)) => local.to_string(),
-        None => s.into_owned(),
+        None => raw.to_string(),
     }
 }
 
@@ -217,9 +243,9 @@ fn read_attrs(start: &quick_xml::events::BytesStart<'_>) -> Vec<(String, String)
         .filter_map(|a| a.ok())
         .map(|a| {
             let key = local_name(a.key.as_ref());
-            let value = match a.unescape_value() {
+            let value = match unescape(&a.value) {
                 Ok(v) => v.into_owned(),
-                Err(_) => String::from_utf8_lossy(&a.value).into_owned(),
+                Err(_) => a.value.into_owned(),
             };
             (key, value)
         })
@@ -263,9 +289,10 @@ mod tests {
 
     #[test]
     fn tolerates_html_entities() {
-        let xml = "<r><t>Caf&eacute;</t></r>";
+        let xml = r#"<r a="x &lt; y"><t>Caf&eacute; &#233;t&#xE9; &amp; co</t></r>"#;
         let root = Element::parse(xml, "test").unwrap();
-        assert!(root.child_text("t").unwrap().contains("eacute"));
+        assert_eq!(root.child_text("t").unwrap(), "Caf&eacute; été & co");
+        assert_eq!(root.attr("a"), Some("x < y"));
     }
 
     #[test]

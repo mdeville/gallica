@@ -122,7 +122,9 @@ impl GuiApp {
 }
 
 impl eframe::App for GuiApp {
-    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+    /// Engine events and window close requests; runs before [`Self::ui`],
+    /// and also while the window is hidden.
+    fn logic(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         self.pump_events();
 
         if ctx.input(|i| i.viewport().close_requested()) && !self.core.state.quit {
@@ -135,13 +137,16 @@ impl eframe::App for GuiApp {
                 self.dispatch(Action::Quit);
             }
         }
+    }
 
-        panels::menu_bar(self, ctx);
-        panels::target_panel(self, ctx);
-        panels::side_panel(self, ctx);
-        panels::bottom_panel(self, ctx);
-        panels::queue_panel(self, ctx);
-        panels::dialogs(self, ctx);
+    fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
+        let ctx = ui.ctx().clone();
+        panels::menu_bar(self, ui);
+        panels::target_panel(self, ui);
+        panels::side_panel(self, ui);
+        panels::bottom_panel(self, ui);
+        panels::queue_panel(self, ui);
+        panels::dialogs(self, &ctx);
 
         if self.core.state.quit {
             ctx.send_viewport_cmd(egui::ViewportCommand::Close);

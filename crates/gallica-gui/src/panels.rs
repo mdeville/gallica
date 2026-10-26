@@ -16,8 +16,8 @@ const RED: Color32 = Color32::from_rgb(0xd3, 0x3c, 0x3c);
 const BLUE: Color32 = Color32::from_rgb(0x3a, 0x7b, 0xd5);
 
 /// File and Help menus.
-pub fn menu_bar(app: &mut GuiApp, ctx: &egui::Context) {
-    egui::TopBottomPanel::top("menu").show(ctx, |ui| {
+pub fn menu_bar(app: &mut GuiApp, ui: &mut Ui) {
+    egui::Panel::top("menu").show(ui, |ui| {
         egui::MenuBar::new().ui(ui, |ui| {
             ui.menu_button("File", |ui| {
                 if ui.button("Open job…").clicked() {
@@ -40,11 +40,11 @@ pub fn menu_bar(app: &mut GuiApp, ctx: &egui::Context) {
                 }
                 if ui.button("BnF API quotas (web)").clicked() {
                     ui.close();
-                    ctx.open_url(egui::OpenUrl::new_tab("https://api.bnf.fr/fr/node/232"));
+                    ui.ctx().open_url(egui::OpenUrl::new_tab("https://api.bnf.fr/fr/node/232"));
                 }
                 if ui.button("Gallica conditions of use (web)").clicked() {
                     ui.close();
-                    ctx.open_url(egui::OpenUrl::new_tab(
+                    ui.ctx().open_url(egui::OpenUrl::new_tab(
                         "https://gallica.bnf.fr/html/und/conditions-dutilisation-des-contenus-de-gallica",
                     ));
                 }
@@ -54,8 +54,8 @@ pub fn menu_bar(app: &mut GuiApp, ctx: &egui::Context) {
 }
 
 /// Target input and resolution status.
-pub fn target_panel(app: &mut GuiApp, ctx: &egui::Context) {
-    egui::TopBottomPanel::top("target").show(ctx, |ui| {
+pub fn target_panel(app: &mut GuiApp, ui: &mut Ui) {
+    egui::Panel::top("target").show(ui, |ui| {
         ui.add_space(4.0);
         ui.horizontal(|ui| {
             ui.label("Target");
@@ -107,12 +107,12 @@ pub fn target_panel(app: &mut GuiApp, ctx: &egui::Context) {
 }
 
 /// Details and settings.
-pub fn side_panel(app: &mut GuiApp, ctx: &egui::Context) {
-    egui::SidePanel::left("side")
+pub fn side_panel(app: &mut GuiApp, ui: &mut Ui) {
+    egui::Panel::left("side")
         .resizable(true)
-        .default_width(340.0)
-        .min_width(280.0)
-        .show(ctx, |ui| {
+        .default_size(340.0)
+        .min_size(280.0)
+        .show(ui, |ui| {
             egui::ScrollArea::vertical().show(ui, |ui| {
                 ui.heading("Details");
                 details(app, ui);
@@ -349,8 +349,8 @@ fn settings(app: &mut GuiApp, ui: &mut Ui) {
 }
 
 /// Queue table and thumbnails of the selected item.
-pub fn queue_panel(app: &mut GuiApp, ctx: &egui::Context) {
-    egui::CentralPanel::default().show(ctx, |ui| {
+pub fn queue_panel(app: &mut GuiApp, ui: &mut Ui) {
+    egui::CentralPanel::default().show(ui, |ui| {
         let Some(plan) = app.core.state.plan.clone() else {
             ui.heading("Queue");
             ui.label(RichText::new("The plan appears here once a target is resolved.").weak());
@@ -479,11 +479,11 @@ fn thumbnails(app: &GuiApp, ui: &mut Ui, plan: &gallica_core::Plan, index: usize
 }
 
 /// Progress, buttons and log.
-pub fn bottom_panel(app: &mut GuiApp, ctx: &egui::Context) {
-    egui::TopBottomPanel::bottom("bottom")
+pub fn bottom_panel(app: &mut GuiApp, ui: &mut Ui) {
+    egui::Panel::bottom("bottom")
         .resizable(true)
-        .default_height(200.0)
-        .show(ctx, |ui| {
+        .default_size(200.0)
+        .show(ui, |ui| {
             ui.add_space(4.0);
             progress(app, ui);
             ui.separator();
