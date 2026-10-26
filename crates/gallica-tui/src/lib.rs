@@ -3,6 +3,7 @@
 
 pub mod cli;
 pub mod headless;
+pub mod tui;
 
 use std::ffi::OsString;
 use std::process::ExitCode;
@@ -56,10 +57,8 @@ where
         Some(Command::Download { target }) => {
             runtime.block_on(headless::run(&cli, headless::Mode::Download, &target))
         }
-        Some(Command::Tui { .. }) | None => {
-            eprintln!("the terminal UI is not available yet; use `gallica download`");
-            EXIT_USAGE
-        }
+        Some(Command::Tui { target }) => runtime.block_on(tui::run(&cli, target)),
+        None => runtime.block_on(tui::run(&cli, None)),
     };
     ExitCode::from(code)
 }
