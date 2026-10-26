@@ -10,8 +10,15 @@
     flake-utils.url = "github:numtide/flake-utils";
   };
 
-  outputs = { self, nixpkgs, rust-overlay, flake-utils }:
-    flake-utils.lib.eachDefaultSystem (system:
+  outputs =
+    {
+      self,
+      nixpkgs,
+      rust-overlay,
+      flake-utils,
+    }:
+    flake-utils.lib.eachDefaultSystem (
+      system:
       let
         pkgs = import nixpkgs {
           inherit system;
@@ -37,21 +44,74 @@
           pkgs.fontconfig
           pkgs.freetype
         ];
-        buildInputs = guiLibs
-          ++ pkgs.lib.optionals pkgs.stdenv.hostPlatform.isDarwin [ pkgs.libiconv ];
-      in {
-        packages.default = rustPlatform.buildRustPackage {
-          pname = "gallica";
-          version = "0.1.0";
-          src = pkgs.lib.cleanSource ./.;
-          cargoLock.lockFile = ./Cargo.lock;
-          inherit nativeBuildInputs buildInputs;
-          # Integration tests spin up a local mock server; fine in the sandbox.
-          doCheck = true;
+        darwinLibs = pkgs.lib.optionals pkgs.stdenv.hostPlatform.isDarwin [ pkgs.libiconv ];
+        buildInputs = guiLibs ++ darwinLibs;
+        inherit (pkgs) lib;
+        workspace = (lib.importTOML ./Cargo.toml).workspace.package;
+
+        # Builds one binary crate of the workspace, taking its name, version,
+        # description, license and binary name from its Cargo.toml. Both
+        # binaries share one source tree and lock file; each package builds
+        # and tests only its own crate (and what it depends on).
+        buildCrate =
+          dir: args:
+          let
+            manifest = lib.importTOML (dir + "/Cargo.toml");
+            pkg = manifest.package;
+            field = name: if pkg.${name}.workspace or false then workspace.${name} else pkg.${name};
+            cargoFlags = [
+              "-p"
+              pkg.name
+            ];
+          in
+          rustPlatform.buildRustPackage (
+            {
+              pname = pkg.name;
+              version = field "version";
+              src = lib.cleanSource ./.;
+              cargoLock.lockFile = ./Cargo.lock;
+              inherit nativeBuildInputs;
+              cargoBuildFlags = cargoFlags;
+              cargoTestFlags = cargoFlags;
+              # Integration tests spin up a local mock server; fine in the sandbox.
+              doCheck = true;
+              meta = {
+                description = pkg.description;
+                license = map lib.getLicenseFromSpdxId (lib.splitString " OR " (field "license"));
+                mainProgram = (builtins.head manifest.bin).name;
+              };
+            }
+            // args
+          );
+      in
+      {
+        packages = rec {
+          default = gallica-tui;
+
+          # Command line and terminal UI.
+          gallica-tui = buildCrate ./crates/gallica-tui {
+            buildInputs = darwinLibs;
+          };
+
+          # Desktop GUI.
+          gallica-gui = buildCrate ./crates/gallica-gui {
+            inherit buildInputs;
+            # winit and glow dlopen the windowing and GL libraries at run
+            # time, so they must be on the binary's RUNPATH.
+            postFixup = lib.optionalString pkgs.stdenv.hostPlatform.isLinux ''
+              patchelf --add-rpath ${lib.makeLibraryPath guiLibs} $out/bin/gallica-gui
+            '';
+          };
         };
 
         devShells.default = pkgs.mkShell {
-          packages = [ toolchain pkgs.cargo-watch pkgs.cargo-nextest ] ++ nativeBuildInputs ++ buildInputs;
+          packages = [
+            toolchain
+            pkgs.cargo-watch
+            pkgs.cargo-nextest
+          ]
+          ++ nativeBuildInputs
+          ++ buildInputs;
           RUST_SRC_PATH = "${toolchain}/lib/rustlib/src/rust/library";
           # winit and glow load these at run time.
           LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath guiLibs;
@@ -63,6 +123,7 @@
           '';
         };
 
-        formatter = pkgs.nixfmt-rfc-style;
-      });
+        formatter = pkgs.nixfmt-tree;
+      }
+    );
 }
