@@ -9,7 +9,9 @@ use url::Url;
 use crate::ark::Ark;
 use crate::client::Client;
 use crate::dc::DublinCore;
+use crate::download::{DownloadOptions, DownloadOutcome};
 use crate::error::{Error, Result};
+use crate::quota::QuotaClass;
 use crate::xml::{Element, parse_bool};
 
 // ---------------------------------------------------------------------------
@@ -352,6 +354,14 @@ pub enum PreviewSize {
 }
 
 impl PreviewSize {
+    /// The quota class: only `highres` previews are rate limited by the BnF.
+    pub fn quota_class(self) -> QuotaClass {
+        match self {
+            PreviewSize::HighRes => QuotaClass::HighResPreview,
+            _ => QuotaClass::Default,
+        }
+    }
+
     /// The qualifier used in URLs.
     pub fn qualifier(self) -> &'static str {
         match self {
@@ -447,7 +457,10 @@ impl Client {
     /// Fetches the plain text of a document (HTML wrapped, with a
     /// bibliographic header), optionally limited to a range of views.
     pub async fn text(&self, ark: &Ark, range: Option<(u32, u32)>) -> Result<String> {
-        self.get_text(self.text_url(ark, range)?).await
+        let resp = self
+            .get_classed(self.text_url(ark, range)?, QuotaClass::Text)
+            .await?;
+        Ok(resp.text().await?)
     }
 
     /// URL of the ALTO OCR of one view.
@@ -477,7 +490,24 @@ impl Client {
     /// Fetches the PDF of a document into memory. Prefer
     /// [`Client::download`] for large documents.
     pub async fn pdf(&self, ark: &Ark, range: Option<(u32, u32)>) -> Result<Bytes> {
-        self.get_bytes(self.pdf_url(ark, range)?).await
+        let _permit = self.download_permit().await;
+        let resp = self
+            .get_classed(self.pdf_url(ark, range)?, QuotaClass::Pdf)
+            .await?;
+        self.read_body(resp).await
+    }
+
+    /// Downloads the PDF of a document to a file. See [`Client::download`]
+    /// for the behaviour of `options`.
+    pub async fn download_pdf(
+        &self,
+        ark: &Ark,
+        range: Option<(u32, u32)>,
+        path: impl AsRef<std::path::Path>,
+        options: &DownloadOptions,
+    ) -> Result<DownloadOutcome> {
+        self.download_classed(self.pdf_url(ark, range)?, path, options, QuotaClass::Pdf)
+            .await
     }
 
     /// URL of a pre-computed preview image of one view.
@@ -487,7 +517,10 @@ impl Client {
 
     /// Fetches a pre-computed preview image of one view.
     pub async fn preview(&self, ark: &Ark, view: u32, size: PreviewSize) -> Result<Bytes> {
-        self.get_bytes(self.preview_url(ark, view, size)?).await
+        let resp = self
+            .get_classed(self.preview_url(ark, view, size)?, size.quota_class())
+            .await?;
+        self.read_body(resp).await
     }
 }
 

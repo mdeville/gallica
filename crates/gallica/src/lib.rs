@@ -9,7 +9,8 @@
 //! - the **search** API ([`sru`]): SRU 1.2 with a small CQL builder;
 //! - the **IIIF** Image and Presentation APIs ([`iiif`]);
 //! - streaming downloads to disk with throttling, bounded concurrency and
-//!   retries ([`download`]);
+//!   retries ([`download`]), within the usage quotas published by the BnF
+//!   ([`quota`]);
 //! - high level helpers to enumerate the issues of a periodical and the views
 //!   of a document ([`collection`]).
 //!
@@ -52,6 +53,7 @@ pub mod document;
 pub mod download;
 pub mod error;
 pub mod iiif;
+pub mod quota;
 pub mod sru;
 pub mod xml;
 
@@ -60,3 +62,4 @@ pub use client::{Client, ClientBuilder, DEFAULT_USER_AGENT, RetryPolicy};
 pub use collection::{Resource, View};
 pub use dc::DublinCore;
 pub use error::{ArkError, Error, Result};
+pub use quota::{QuotaClass, Quotas};

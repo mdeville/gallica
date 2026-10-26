@@ -18,6 +18,7 @@ use crate::ark::Ark;
 use crate::client::Client;
 use crate::download::{DownloadOptions, DownloadOutcome};
 use crate::error::{Error, Result};
+use crate::quota::QuotaClass;
 
 /// The region of the image to return.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -251,6 +252,22 @@ impl ImageRequest {
     pub fn format(mut self, format: Format) -> Self {
         self.format = format;
         self
+    }
+
+    /// The quota class of this request: full size or any dimension above
+    /// 1000 px counts as a full resolution image for the BnF.
+    pub fn quota_class(&self) -> QuotaClass {
+        let big = |n: u32| n > 1000;
+        let full = match self.size {
+            Size::Full | Size::Max | Size::Percent(_) => true,
+            Size::Width(n) | Size::Height(n) => big(n),
+            Size::Exact(w, h) | Size::Fit(w, h) => big(w) || big(h),
+        };
+        if full {
+            QuotaClass::FullResImage
+        } else {
+            QuotaClass::Default
+        }
     }
 
     /// The path suffix `region/size/rotation/quality.format`.
@@ -491,9 +508,9 @@ impl Client {
     pub async fn iiif_image(&self, ark: &Ark, view: u32, request: &ImageRequest) -> Result<Bytes> {
         let url = self.iiif_image_url(ark, view, request)?;
         let _permit = self.download_permit().await;
-        let resp = self.get(url.clone()).await?;
+        let resp = self.get_classed(url.clone(), request.quota_class()).await?;
         check_image_content_type(&resp, &url)?;
-        Ok(resp.bytes().await?)
+        self.read_body(resp).await
     }
 
     /// Downloads an IIIF image to a file. See [`Client::download`] for the
@@ -507,7 +524,8 @@ impl Client {
         options: &DownloadOptions,
     ) -> Result<DownloadOutcome> {
         let url = self.iiif_image_url(ark, view, request)?;
-        self.download(url, path, options).await
+        self.download_classed(url, path, options, request.quota_class())
+            .await
     }
 }
 
@@ -530,6 +548,36 @@ pub(crate) fn check_image_content_type(resp: &reqwest::Response, url: &Url) -> R
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn quota_classes() {
+        use crate::quota::QuotaClass;
+        assert_eq!(ImageRequest::full().quota_class(), QuotaClass::FullResImage);
+        assert_eq!(
+            ImageRequest::full().size(Size::Max).quota_class(),
+            QuotaClass::FullResImage
+        );
+        assert_eq!(
+            ImageRequest::full().size(Size::Width(1001)).quota_class(),
+            QuotaClass::FullResImage
+        );
+        assert_eq!(
+            ImageRequest::full().size(Size::Width(1000)).quota_class(),
+            QuotaClass::Default
+        );
+        assert_eq!(
+            ImageRequest::full()
+                .size(Size::Fit(800, 1200))
+                .quota_class(),
+            QuotaClass::FullResImage
+        );
+        assert_eq!(
+            ImageRequest::full()
+                .size(Size::Exact(600, 900))
+                .quota_class(),
+            QuotaClass::Default
+        );
+    }
 
     #[test]
     fn request_paths() {

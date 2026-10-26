@@ -9,6 +9,7 @@ use url::Url;
 
 use crate::client::Client;
 use crate::error::{Error, Result};
+use crate::quota::{BandwidthLimiter, QuotaClass};
 
 /// Progress callback: `(bytes received so far, total bytes if known)`.
 pub type ProgressFn = Arc<dyn Fn(u64, Option<u64>) + Send + Sync>;
@@ -76,6 +77,19 @@ impl Client {
         path: impl AsRef<Path>,
         options: &DownloadOptions,
     ) -> Result<DownloadOutcome> {
+        self.download_classed(url, path, options, QuotaClass::Default)
+            .await
+    }
+
+    /// Like [`Client::download`], counting the request against the quota of
+    /// the given class.
+    pub async fn download_classed(
+        &self,
+        url: Url,
+        path: impl AsRef<Path>,
+        options: &DownloadOptions,
+        class: QuotaClass,
+    ) -> Result<DownloadOutcome> {
         let path = path.as_ref().to_path_buf();
         if !options.overwrite
             && let Ok(meta) = tokio::fs::metadata(&path).await
@@ -98,7 +112,7 @@ impl Client {
         }
 
         let _permit = self.download_permit().await;
-        let resp = self.get(url.clone()).await?;
+        let resp = self.get_classed(url.clone(), class).await?;
         crate::iiif::check_image_content_type(&resp, &url)?;
         let content_type = resp
             .headers()
@@ -108,7 +122,14 @@ impl Client {
         let total = resp.content_length();
 
         let tmp = temp_path(&path);
-        let result = write_stream(resp, &tmp, total, options.progress.as_ref()).await;
+        let result = write_stream(
+            resp,
+            &tmp,
+            total,
+            options.progress.as_ref(),
+            self.bandwidth_limiter(),
+        )
+        .await;
         match result {
             Ok(bytes) => {
                 tokio::fs::rename(&tmp, &path)
@@ -134,6 +155,7 @@ async fn write_stream(
     tmp: &Path,
     total: Option<u64>,
     progress: Option<&ProgressFn>,
+    bandwidth: Option<&BandwidthLimiter>,
 ) -> Result<u64> {
     let mut file = tokio::fs::File::create(tmp)
         .await
@@ -142,6 +164,9 @@ async fn write_stream(
     let mut written = 0u64;
     while let Some(chunk) = stream.next().await {
         let chunk = chunk?;
+        if let Some(b) = bandwidth {
+            b.consume(chunk.len()).await;
+        }
         file.write_all(&chunk)
             .await
             .map_err(|e| Error::io(Some(tmp.to_path_buf()), e))?;

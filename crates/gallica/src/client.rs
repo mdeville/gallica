@@ -16,6 +16,7 @@ use url::Url;
 
 use crate::ark::GALLICA_BASE_URL;
 use crate::error::{Error, Result};
+use crate::quota::{QuotaClass, QuotaSet, Quotas};
 
 /// Default `User-Agent` sent to Gallica.
 pub const DEFAULT_USER_AGENT: &str = concat!(
@@ -72,6 +73,7 @@ pub struct ClientBuilder {
     min_request_interval: Duration,
     max_concurrent_downloads: usize,
     retry: RetryPolicy,
+    quotas: Quotas,
 }
 
 impl Default for ClientBuilder {
@@ -84,6 +86,7 @@ impl Default for ClientBuilder {
             min_request_interval: Duration::from_millis(250),
             max_concurrent_downloads: 2,
             retry: RetryPolicy::default(),
+            quotas: Quotas::default(),
         }
     }
 }
@@ -137,6 +140,13 @@ impl ClientBuilder {
         self
     }
 
+    /// Per-endpoint quotas (default: the limits published by the BnF, see
+    /// [`Quotas::bnf`]).
+    pub fn quotas(mut self, quotas: Quotas) -> Self {
+        self.quotas = quotas;
+        self
+    }
+
     /// Builds the client.
     pub fn build(self) -> Result<Client> {
         let mut headers = HeaderMap::new();
@@ -158,6 +168,7 @@ impl ClientBuilder {
                 retry: self.retry,
                 throttle: Throttle::new(self.min_request_interval),
                 download_permits: Semaphore::new(self.max_concurrent_downloads),
+                quotas: QuotaSet::new(&self.quotas),
             }),
         })
     }
@@ -176,6 +187,7 @@ struct Inner {
     retry: RetryPolicy,
     throttle: Throttle,
     download_permits: Semaphore,
+    quotas: QuotaSet,
 }
 
 impl std::fmt::Debug for Client {
@@ -236,14 +248,26 @@ impl Client {
     /// Performs a GET request with throttling and retries, returning the
     /// response once a success status has been received.
     pub async fn get(&self, url: Url) -> Result<Response> {
-        self.get_with_accept(url, None).await
+        self.request(url, QuotaClass::Default, None).await
     }
 
-    pub(crate) async fn get_with_accept(&self, url: Url, accept: Option<&str>) -> Result<Response> {
+    /// Like [`Client::get`], also counting the request against the quota of
+    /// the given class.
+    pub async fn get_classed(&self, url: Url, class: QuotaClass) -> Result<Response> {
+        self.request(url, class, None).await
+    }
+
+    pub(crate) async fn request(
+        &self,
+        url: Url,
+        class: QuotaClass,
+        accept: Option<&str>,
+    ) -> Result<Response> {
         let policy = &self.inner.retry;
         let mut attempt = 0u32;
         loop {
             attempt += 1;
+            self.inner.quotas.acquire(class).await;
             self.inner.throttle.wait().await;
             tracing::debug!(%url, attempt, "GET");
             let mut req = self.inner.http.get(url.clone());
@@ -288,11 +312,34 @@ impl Client {
     /// GET and deserialise the body as JSON.
     pub async fn get_json<T: serde::de::DeserializeOwned>(&self, url: Url) -> Result<T> {
         let text = self
-            .get_with_accept(url, Some("application/json, application/ld+json"))
+            .request(
+                url,
+                QuotaClass::Default,
+                Some("application/json, application/ld+json"),
+            )
             .await?
             .text()
             .await?;
         Ok(serde_json::from_str(&text)?)
+    }
+
+    /// Reads a whole body into memory, paced by the bandwidth cap.
+    pub(crate) async fn read_body(&self, resp: Response) -> Result<Bytes> {
+        use futures::StreamExt;
+        let mut out = bytes::BytesMut::with_capacity(resp.content_length().unwrap_or(0) as usize);
+        let mut stream = resp.bytes_stream();
+        while let Some(chunk) = stream.next().await {
+            let chunk = chunk?;
+            if let Some(b) = self.inner.quotas.bandwidth() {
+                b.consume(chunk.len()).await;
+            }
+            out.extend_from_slice(&chunk);
+        }
+        Ok(out.freeze())
+    }
+
+    pub(crate) fn bandwidth_limiter(&self) -> Option<&crate::quota::BandwidthLimiter> {
+        self.inner.quotas.bandwidth()
     }
 
     /// Acquires a download slot; dropped when the download finishes.

@@ -26,7 +26,11 @@ of a document; `download` streams files to disk through a temporary file.
 
 The client throttles requests (250 ms apart by default), bounds concurrent
 downloads (2 by default) and retries transient failures (HTTP 429/5xx,
-timeouts) with exponential backoff, honouring `Retry-After`.
+timeouts) with exponential backoff, honouring `Retry-After`. It also enforces
+the [usage quotas published by the BnF](https://api.bnf.fr/fr/node/232) on
+its own side: 5 full-resolution IIIF images, 50 `highres` previews, 4 PDFs
+and 5 `texteBrut` exports per minute, and 832 KB/s of download bandwidth.
+See `Quotas` to adjust them.
 
 ```rust
 use gallica::{Client, Resource, iiif::ImageRequest, download::DownloadOptions};

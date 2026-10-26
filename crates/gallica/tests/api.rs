@@ -6,7 +6,7 @@ use gallica::document::PreviewSize;
 use gallica::download::DownloadOptions;
 use gallica::iiif::{ImageRequest, Size};
 use gallica::sru::SearchQuery;
-use gallica::{Ark, Client, Error, Resource, RetryPolicy};
+use gallica::{Ark, Client, Error, Quotas, Resource, RetryPolicy};
 use wiremock::matchers::{method, path, query_param};
 use wiremock::{Mock, MockServer, ResponseTemplate};
 
@@ -31,6 +31,7 @@ async fn client(server: &MockServer) -> Client {
         .base_url(server.uri())
         .unwrap()
         .min_request_interval(Duration::ZERO)
+        .quotas(Quotas::unlimited())
         .retry(RetryPolicy {
             max_attempts: 3,
             initial_backoff: Duration::from_millis(10),
@@ -197,6 +198,7 @@ async fn views_fall_back_to_manifest() {
         .base_url(server.uri())
         .unwrap()
         .min_request_interval(Duration::ZERO)
+        .quotas(Quotas::unlimited())
         .retry(RetryPolicy::none())
         .build()
         .unwrap();
