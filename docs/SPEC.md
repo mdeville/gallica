@@ -1,6 +1,6 @@
 # gallica — application specification
 
-Status: draft for review, 2026-10-26. Covers the terminal UI (ratatui), the
+Status: implemented 2026-10-26 (core, headless commands, TUI, GUI); kept as the design reference. Covers the terminal UI (ratatui), the
 desktop GUI (egui/eframe) and the shared application core they are built on.
 The SDK (`crates/gallica`) is specified by its own API documentation.
 

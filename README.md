@@ -9,6 +9,39 @@ The project is built in layers:
 2. a CLI on top of the SDK (next);
 3. a cross-platform GUI (later).
 
+## The applications
+
+| Binary | Crate | What it is |
+|---|---|---|
+| `gallica` | `crates/gallica-tui` | headless commands (`info`, `plan`, `download`) and the terminal UI (`tui`, also the default) |
+| `gallica-gui` | `crates/gallica-gui` | the desktop GUI (egui/eframe) |
+
+Both are thin front ends over `crates/gallica-core`, the UI-agnostic
+application core (state, actions, events, a pure reducer and an engine running
+the SDK on tokio). The design is described in [docs/SPEC.md](docs/SPEC.md).
+
+```sh
+# What is it?
+gallica info https://gallica.bnf.fr/ark:/12148/cb327110547/
+
+# What would a download fetch, and what would it cost under the BnF quotas?
+gallica plan https://gallica.bnf.fr/ark:/12148/cb327110547/ --years 1921-1925
+
+# Download (highres previews by default; --variant full needs --yes)
+gallica download https://gallica.bnf.fr/ark:/12148/cb327110547/ \
+    --years 1921-1925 --out ~/Gallica --contact you@example.org
+
+# Interactive
+gallica tui
+gallica-gui
+```
+
+Files land in `<out>/<ark> - <title>/<year>/<date> <ark>/f0001.jpg` with a
+`metadata.json` per issue and a `done.json` marker; running the same target
+again resumes without re-requesting finished issues. Settings (contact address,
+output folder, image variant, quotas) persist in the platform configuration
+directory as `config.toml`.
+
 ## The SDK
 
 The `gallica` crate wraps the public BnF APIs documented on

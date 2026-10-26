@@ -25,7 +25,19 @@
           rustc = toolchain;
         };
         nativeBuildInputs = [ pkgs.pkg-config ];
-        buildInputs = pkgs.lib.optionals pkgs.stdenv.hostPlatform.isLinux [ ]
+        # The GUI (eframe/winit) links against the windowing and GL libraries.
+        guiLibs = pkgs.lib.optionals pkgs.stdenv.hostPlatform.isLinux [
+          pkgs.libxkbcommon
+          pkgs.libGL
+          pkgs.wayland
+          pkgs.libx11
+          pkgs.libxcursor
+          pkgs.libxi
+          pkgs.libxrandr
+          pkgs.fontconfig
+          pkgs.freetype
+        ];
+        buildInputs = guiLibs
           ++ pkgs.lib.optionals pkgs.stdenv.hostPlatform.isDarwin [ pkgs.libiconv ];
       in {
         packages.default = rustPlatform.buildRustPackage {
@@ -41,6 +53,8 @@
         devShells.default = pkgs.mkShell {
           packages = [ toolchain pkgs.cargo-watch pkgs.cargo-nextest ] ++ nativeBuildInputs ++ buildInputs;
           RUST_SRC_PATH = "${toolchain}/lib/rustlib/src/rust/library";
+          # winit and glow load these at run time.
+          LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath guiLibs;
           # Work environments sometimes export a shared target dir and linker
           # flags; this project builds on its own.
           shellHook = ''
