@@ -110,12 +110,14 @@ cargo run --example inspect -- https://gallica.bnf.fr/ark:/12148/bpt6k961287k --
 
 With Nix (flakes), `nix develop` gives a shell with the toolchain pinned by
 `rust-toolchain.toml` through [rust-overlay](https://github.com/oxalica/rust-overlay);
-`nix build` builds and tests the command line and terminal UI (`gallica`),
-`nix build .#gallica-gui` the desktop GUI. From Linux,
+`nix build` builds the command line and terminal UI (`gallica`),
+`nix build .#gallica-gui` the desktop GUI, and `nix flake check` runs every
+crate's tests. These native builds use [crate2nix](https://github.com/nix-community/crate2nix)
+(one derivation per crate) through import from derivation, so `nix flake show`
+lists them as omitted unless `--allow-import-from-derivation` is given. From Linux,
 `nix build .#gallica-tui-windows` and `.#gallica-gui-windows` cross compile
-self-contained Windows x86_64 executables (MinGW, tests not run). Without Nix,
-any recent stable Rust
-(edition 2024) works:
+self-contained Windows x86_64 executables (MinGW, plain cargo build, tests not
+run). Without Nix, any recent stable Rust (edition 2024) works:
 
 ```sh
 cargo build
