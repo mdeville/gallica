@@ -7,8 +7,9 @@ use std::time::Duration;
 use gallica::QuotaClass;
 
 use crate::job::JobFile;
+use crate::log::LogLevel;
 use crate::settings::{Settings, VariantSpec};
-use crate::state::{ItemId, LogLevel, Plan, Resolved};
+use crate::state::{ItemId, Plan, Resolved};
 
 /// What the user can do. Identical for every front end.
 #[derive(Debug, Clone, PartialEq)]
@@ -45,8 +46,6 @@ pub enum Action {
     RetryFailed,
     /// Load a previous job file.
     OpenJob(PathBuf),
-    /// Clear the log.
-    ClearLog,
     /// Leave the application.
     Quit,
 }

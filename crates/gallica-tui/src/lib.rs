@@ -9,6 +9,8 @@ use std::ffi::OsString;
 use std::process::ExitCode;
 
 use clap::Parser;
+use gallica_core::LogBuffer;
+use gallica_core::log::{self, LogLayer};
 
 use cli::{Cli, Command};
 
@@ -36,7 +38,6 @@ where
             };
         }
     };
-    init_tracing(cli.verbose);
     let runtime = match tokio::runtime::Builder::new_multi_thread()
         .enable_all()
         .build()
@@ -47,32 +48,40 @@ where
             return ExitCode::from(EXIT_USAGE);
         }
     };
+    let headless = matches!(
+        cli.command,
+        Some(Command::Info { .. } | Command::Plan { .. } | Command::Download { .. })
+    );
+    let printer = headless::Printer::default();
+    let buffer = LogBuffer::new();
+    if headless {
+        log::init(cli.verbosity(), vec![printer.layer().boxed()]);
+    } else {
+        let mut outputs = vec![buffer.layer().boxed()];
+        let path = log::create_file("gallica").map(|(path, file)| {
+            outputs.push(LogLayer::file(file).boxed());
+            path
+        });
+        log::init(cli.verbosity(), outputs);
+        if let Some(path) = path {
+            tracing::debug!("log file: {}", path.display());
+        }
+    }
     let code = match cli.command.clone() {
         Some(Command::Info { target }) => {
-            runtime.block_on(headless::run(&cli, headless::Mode::Info, &target))
+            runtime.block_on(headless::run(&cli, &printer, headless::Mode::Info, &target))
         }
         Some(Command::Plan { target }) => {
-            runtime.block_on(headless::run(&cli, headless::Mode::Plan, &target))
+            runtime.block_on(headless::run(&cli, &printer, headless::Mode::Plan, &target))
         }
-        Some(Command::Download { target }) => {
-            runtime.block_on(headless::run(&cli, headless::Mode::Download, &target))
-        }
-        Some(Command::Tui { target }) => runtime.block_on(tui::run(&cli, target)),
-        None => runtime.block_on(tui::run(&cli, None)),
+        Some(Command::Download { target }) => runtime.block_on(headless::run(
+            &cli,
+            &printer,
+            headless::Mode::Download,
+            &target,
+        )),
+        Some(Command::Tui { target }) => runtime.block_on(tui::run(&cli, buffer, target)),
+        None => runtime.block_on(tui::run(&cli, buffer, None)),
     };
     ExitCode::from(code)
-}
-
-fn init_tracing(verbose: u8) {
-    let filter = match verbose {
-        0 => "warn",
-        1 => "info,gallica=debug,gallica_core=debug",
-        _ => "debug",
-    };
-    let _ = tracing_subscriber::fmt()
-        .with_env_filter(
-            tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| filter.into()),
-        )
-        .with_writer(std::io::stderr)
-        .try_init();
 }

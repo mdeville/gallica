@@ -3,7 +3,7 @@
 use std::path::PathBuf;
 
 use clap::{Args, Parser, Subcommand};
-use gallica_core::{Settings, VariantSpec};
+use gallica_core::{Settings, VariantSpec, Verbosity};
 
 /// Bulk downloader for Gallica, the digital library of the BnF.
 #[derive(Debug, Parser)]
@@ -13,15 +13,31 @@ pub struct Cli {
     #[arg(long, global = true, value_name = "FILE")]
     pub config: Option<PathBuf>,
 
-    /// More output (-v: info, -vv: debug).
+    /// More diagnostics (-v: info, and debug from gallica; -vv: as --debug).
     #[arg(short, long, global = true, action = clap::ArgAction::Count)]
     pub verbose: u8,
+
+    /// Every diagnostic, dependencies included. The terminal UI also writes
+    /// its log to gallica.log in the platform state directory.
+    #[arg(long, global = true)]
+    pub debug: bool,
 
     #[command(flatten)]
     pub overrides: Overrides,
 
     #[command(subcommand)]
     pub command: Option<Command>,
+}
+
+impl Cli {
+    /// How much to log.
+    pub fn verbosity(&self) -> Verbosity {
+        match (self.debug, self.verbose) {
+            (true, _) | (_, 2..) => Verbosity::Debug,
+            (false, 1) => Verbosity::Verbose,
+            (false, 0) => Verbosity::Normal,
+        }
+    }
 }
 
 /// Settings that can be overridden for one invocation.

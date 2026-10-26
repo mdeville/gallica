@@ -1,13 +1,11 @@
 //! The pure state machine: actions and events in, commands out.
 
-use std::time::{Duration, Instant, SystemTime};
+use std::time::{Duration, Instant};
 
+use crate::log::{self, LogLevel};
 use crate::messages::{Action, Command, Event, ItemOutcome};
 use crate::settings::Settings;
-use crate::state::{
-    AppState, ItemId, ItemState, ItemStatus, LOG_CAPACITY, LogEntry, LogLevel, Phase, Progress,
-    Run, TargetStatus,
-};
+use crate::state::{AppState, ItemId, ItemState, ItemStatus, Phase, Progress, Run, TargetStatus};
 
 /// The application.
 #[derive(Debug, Clone, Default)]
@@ -120,10 +118,6 @@ impl App {
                 }
             }
             Action::OpenJob(path) => vec![Command::OpenJob(path)],
-            Action::ClearLog => {
-                s.log.clear();
-                vec![]
-            }
             Action::Quit => {
                 s.quit = true;
                 let mut cmds = vec![Command::SaveSettings(s.settings.clone())];
@@ -431,17 +425,9 @@ impl App {
             .unwrap_or_else(|| format!("item {item}"))
     }
 
-    /// Adds a log line.
+    /// Logs an application message (see [`crate::log`]).
     pub fn log(&mut self, level: LogLevel, message: impl Into<String>) {
-        let log = &mut self.state.log;
-        if log.len() >= LOG_CAPACITY {
-            log.pop_front();
-        }
-        log.push_back(LogEntry {
-            at: SystemTime::now(),
-            level,
-            message: message.into(),
-        });
+        log::emit(level, &message.into());
     }
 }
 
@@ -524,18 +510,20 @@ mod tests {
 
     #[test]
     fn resolve_requires_input() {
+        let (log, _guard) = log::capture();
         let mut app = App::new(Settings::default());
         assert!(app.update(Action::Resolve).is_empty());
-        assert_eq!(app.state.log.back().unwrap().level, LogLevel::Warn);
+        assert_eq!(log.snapshot().last().unwrap().level, LogLevel::Warn);
     }
 
     #[test]
     fn start_requires_contact() {
         let mut app = ready_app();
+        let (log, _guard) = log::capture();
         app.state.settings.contact = None;
         assert!(app.update(Action::Start).is_empty());
         assert_eq!(app.state.run.phase, Phase::Ready);
-        assert_eq!(app.state.log.back().unwrap().level, LogLevel::Error);
+        assert_eq!(log.snapshot().last().unwrap().level, LogLevel::Error);
     }
 
     #[test]

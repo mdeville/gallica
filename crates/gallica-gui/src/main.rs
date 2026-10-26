@@ -11,7 +11,8 @@ use std::process::ExitCode;
 
 use clap::Parser;
 use gallica_core::engine::channel;
-use gallica_core::{App, Engine, Settings};
+use gallica_core::log::{self, LogLayer};
+use gallica_core::{App, Engine, LogBuffer, Settings, Verbosity};
 
 /// Bulk downloader for Gallica, the digital library of the BnF.
 #[derive(Debug, Parser)]
@@ -20,18 +21,40 @@ struct Cli {
     /// Settings file (default: the platform configuration directory).
     #[arg(long, value_name = "FILE")]
     config: Option<PathBuf>,
+    /// More diagnostics (-v: info, and debug from gallica; -vv: as --debug).
+    #[arg(short, long, action = clap::ArgAction::Count)]
+    verbose: u8,
+    /// Every diagnostic, dependencies included.
+    #[arg(long)]
+    debug: bool,
     /// Gallica URL or ARK to start with.
     target: Option<String>,
 }
 
+/// The log goes to the log panel, to stderr (when launched from a
+/// terminal) and to gallica-gui.log in the platform state directory.
+fn init_log(cli: &Cli) -> LogBuffer {
+    let verbosity = match (cli.debug, cli.verbose) {
+        (true, _) | (_, 2..) => Verbosity::Debug,
+        (false, 1) => Verbosity::Verbose,
+        (false, 0) => Verbosity::Normal,
+    };
+    let buffer = LogBuffer::new();
+    let mut outputs = vec![buffer.layer().boxed(), LogLayer::stderr().boxed()];
+    let path = log::create_file("gallica-gui").map(|(path, file)| {
+        outputs.push(LogLayer::file(file).boxed());
+        path
+    });
+    log::init(verbosity, outputs);
+    if let Some(path) = path {
+        tracing::debug!("log file: {}", path.display());
+    }
+    buffer
+}
+
 fn main() -> ExitCode {
     let cli = Cli::parse();
-    let _ = tracing_subscriber::fmt()
-        .with_env_filter(
-            tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| "warn".into()),
-        )
-        .with_writer(std::io::stderr)
-        .try_init();
+    let log = init_log(&cli);
 
     let settings = match &cli.config {
         Some(p) => Settings::load_from(p),
@@ -78,7 +101,7 @@ fn main() -> ExitCode {
         options,
         Box::new(move |cc| {
             Ok(Box::new(app::GuiApp::new(
-                cc, core, engine, rx, handle, target,
+                cc, core, engine, rx, handle, log, target,
             )))
         }),
     );

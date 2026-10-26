@@ -1,7 +1,6 @@
 //! The application state: everything a front end needs to draw.
 
-use std::collections::VecDeque;
-use std::time::{Duration, Instant, SystemTime};
+use std::time::{Duration, Instant};
 
 use gallica::document::Date;
 use gallica::{Ark, QuotaClass};
@@ -11,9 +10,6 @@ use crate::settings::Settings;
 
 /// Index of an item in the plan.
 pub type ItemId = usize;
-
-/// Maximum number of log lines kept.
-pub const LOG_CAPACITY: usize = 500;
 
 /// The whole state.
 #[derive(Debug, Clone, Default)]
@@ -26,8 +22,6 @@ pub struct AppState {
     pub plan: Option<Plan>,
     /// The current or last run.
     pub run: Run,
-    /// Recent log lines, oldest first.
-    pub log: VecDeque<LogEntry>,
     /// Set once the user asked to quit.
     pub quit: bool,
 }
@@ -364,38 +358,5 @@ impl Progress {
         let (class, wait, since) = self.quota_waiting?;
         let remaining = wait.checked_sub(since.elapsed())?;
         Some((class, remaining))
-    }
-}
-
-/// A log line.
-#[derive(Debug, Clone)]
-pub struct LogEntry {
-    /// When.
-    pub at: SystemTime,
-    /// Level.
-    pub level: LogLevel,
-    /// Text.
-    pub message: String,
-}
-
-/// Log level.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-pub enum LogLevel {
-    /// Information.
-    Info,
-    /// Something to look at.
-    Warn,
-    /// Something failed.
-    Error,
-}
-
-impl LogLevel {
-    /// Short label.
-    pub fn label(&self) -> &'static str {
-        match self {
-            LogLevel::Info => "info",
-            LogLevel::Warn => "warn",
-            LogLevel::Error => "error",
-        }
     }
 }

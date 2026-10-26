@@ -3,7 +3,7 @@
 use std::sync::mpsc;
 
 use gallica_core::engine::EventReceiver;
-use gallica_core::{Action, App, Engine, Event, LogLevel};
+use gallica_core::{Action, App, Engine, Event, LogBuffer, LogLevel};
 
 use crate::panels;
 use crate::state::{Confirm, GuiState};
@@ -16,6 +16,8 @@ pub struct GuiApp {
     pub engine: Engine,
     /// GUI-only state.
     pub gui: GuiState,
+    /// What the log panel shows.
+    pub log: LogBuffer,
     /// Events forwarded from the engine.
     events: mpsc::Receiver<Event>,
     /// Runtime handle for background tasks (file dialogs).
@@ -31,6 +33,7 @@ impl GuiApp {
         engine: Engine,
         mut rx: EventReceiver,
         handle: tokio::runtime::Handle,
+        log: LogBuffer,
         target: Option<String>,
     ) -> GuiApp {
         egui_extras::install_image_loaders(&cc.egui_ctx);
@@ -51,6 +54,7 @@ impl GuiApp {
                 show_log: true,
                 ..Default::default()
             },
+            log,
             events,
             handle,
         };
@@ -142,10 +146,14 @@ impl eframe::App for GuiApp {
         if self.core.state.quit {
             ctx.send_viewport_cmd(egui::ViewportCommand::Close);
         }
-        // Keep the progress line and ETA fresh during a run.
-        if self.core.state.run.phase.is_active() {
-            ctx.request_repaint_after(std::time::Duration::from_millis(500));
-        }
+        // Keep the progress line and ETA fresh during a run, and show log
+        // lines from background tasks when idle. (Repainting from the log
+        // output itself could re-enter egui, which logs too.)
+        ctx.request_repaint_after(if self.core.state.run.phase.is_active() {
+            std::time::Duration::from_millis(500)
+        } else {
+            std::time::Duration::from_secs(1)
+        });
     }
 }
 

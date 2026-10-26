@@ -1,5 +1,6 @@
 //! UI-only state: focus, edits, dialogs, scroll positions.
 
+use gallica_core::{LogBuffer, LogEntry};
 use ratatui::widgets::TableState;
 
 /// Which panel has the focus.
@@ -220,6 +221,10 @@ pub struct UiState {
     pub settings_row: usize,
     /// Queue table state (selection, scroll).
     pub table: TableState,
+    /// Where the log output appends.
+    pub log_buffer: LogBuffer,
+    /// The log as of the last refresh, oldest first.
+    pub log: Vec<LogEntry>,
     /// Lines scrolled up from the end of the log.
     pub log_scroll: usize,
     /// Help overlay shown.
@@ -229,6 +234,12 @@ pub struct UiState {
 }
 
 impl UiState {
+    /// Copies the latest log lines from the buffer.
+    pub fn refresh_log(&mut self) {
+        self.log = self.log_buffer.snapshot();
+        self.log_scroll = self.log_scroll.min(self.log.len().saturating_sub(1));
+    }
+
     /// The selected settings row.
     pub fn settings_row(&self) -> SettingsRow {
         SettingsRow::ALL[self.settings_row.min(SettingsRow::ALL.len() - 1)]

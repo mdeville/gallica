@@ -4,7 +4,9 @@ use std::path::Path;
 use std::time::Duration;
 
 use gallica::Quotas;
-use gallica_core::{Action, App, Engine, Event, ItemStatus, Phase, Settings, VariantSpec};
+use gallica_core::{
+    Action, App, Engine, Event, ItemStatus, LogBuffer, LogEntry, Phase, Settings, VariantSpec,
+};
 use wiremock::matchers::{method, path, path_regex, query_param};
 use wiremock::{Mock, MockServer, ResponseTemplate};
 
@@ -78,17 +80,29 @@ struct Harness {
     app: App,
     engine: Engine,
     rx: gallica_core::engine::EventReceiver,
+    log: LogBuffer,
+    _log_guard: gallica_core::log::CaptureGuard,
 }
 
 impl Harness {
     fn new(settings: Settings) -> Harness {
+        let (log, _log_guard) = gallica_core::log::capture();
         let (tx, rx) = gallica_core::engine::channel();
         let engine = Engine::new(&settings, tx, tokio::runtime::Handle::current()).unwrap();
         Harness {
             app: App::new(settings),
             engine,
             rx,
+            log,
+            _log_guard,
         }
+    }
+
+    /// The application messages logged so far.
+    fn messages(&self) -> Vec<LogEntry> {
+        let mut entries = self.log.snapshot();
+        entries.retain(|e| e.target.is_none());
+        entries
     }
 
     fn act(&mut self, action: Action) {
@@ -106,7 +120,7 @@ impl Harness {
         while !done(&self.app) {
             let event = tokio::time::timeout_at(deadline, self.rx.recv())
                 .await
-                .unwrap_or_else(|_| panic!("timeout; log: {:#?}", self.app.state.log))
+                .unwrap_or_else(|_| panic!("timeout; log: {:#?}", self.log.snapshot()))
                 .expect("engine dropped");
             let cancelled = matches!(
                 event,
@@ -147,7 +161,7 @@ async fn downloads_a_periodical_and_resumes() {
     h.act(Action::Start);
     h.wait_until(|a| a.state.run.phase == Phase::Finished).await;
     let run = &h.app.state.run;
-    assert_eq!(run.progress.failed_items, 0, "{:#?}", h.app.state.log);
+    assert_eq!(run.progress.failed_items, 0, "{:#?}", h.log.snapshot());
     assert!(run.items.iter().all(|i| i.status == ItemStatus::Done));
     assert_eq!(run.progress.views_done, 16);
     assert_eq!(run.progress.views_total, Some(16));
@@ -237,7 +251,7 @@ async fn downloads_a_document_with_text() {
         h.app.state.run.items[0].status,
         ItemStatus::Done,
         "{:#?}",
-        h.app.state.log
+        h.log.snapshot()
     );
     let dir = out.path().join("bpt6k961263c - Les Belles images");
     assert!(dir.join("f0001.jpg").is_file());
@@ -264,7 +278,7 @@ async fn a_challenge_stops_the_run() {
     h.act(Action::Resolve);
     h.wait_until(|a| matches!(a.state.target.status, gallica_core::TargetStatus::Failed(_)))
         .await;
-    let msg = h.app.state.log.back().unwrap().message.clone();
+    let msg = h.messages().last().unwrap().message.clone();
     assert!(msg.contains("403"), "{msg}");
 }
 

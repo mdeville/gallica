@@ -1,8 +1,10 @@
 //! The non-interactive commands: drive the core and print to the terminal.
 
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use gallica_core::engine::{EventReceiver, channel};
+use gallica_core::log::LogLayer;
 use gallica_core::{
     Action, App, Command, Engine, Event, ItemStatus, LogLevel, Phase, Resolved, TargetStatus,
     format,
@@ -23,8 +25,39 @@ pub enum Mode {
     Download,
 }
 
+/// The log output of the headless commands: lines on stderr, above the
+/// progress bars while they are shown.
+#[derive(Clone, Default)]
+pub struct Printer {
+    bars: Arc<Mutex<Option<MultiProgress>>>,
+}
+
+impl Printer {
+    /// The log output.
+    pub fn layer(&self) -> LogLayer {
+        let printer = self.clone();
+        LogLayer::new(move |entry| printer.println(&entry.line()))
+    }
+
+    fn println(&self, line: &str) {
+        let bars = self.bars.lock().ok().and_then(|b| b.clone());
+        match bars {
+            Some(multi) => {
+                let _ = multi.println(line);
+            }
+            None => eprintln!("{line}"),
+        }
+    }
+
+    fn set_bars(&self, multi: Option<MultiProgress>) {
+        if let Ok(mut bars) = self.bars.lock() {
+            *bars = multi;
+        }
+    }
+}
+
 /// Runs one headless command and returns the exit code.
-pub async fn run(cli: &Cli, mode: Mode, target: &str) -> u8 {
+pub async fn run(cli: &Cli, printer: &Printer, mode: Mode, target: &str) -> u8 {
     let settings = match load_settings(cli) {
         Ok(s) => s,
         Err(e) => {
@@ -47,8 +80,8 @@ pub async fn run(cli: &Cli, mode: Mode, target: &str) -> u8 {
         mode,
         yes: cli.overrides.yes,
         progress: None,
+        printer: printer.clone(),
         blocked: false,
-        quiet_log: cli.verbose == 0,
     };
     driver.run(target).await
 }
@@ -60,8 +93,8 @@ struct Driver {
     mode: Mode,
     yes: bool,
     progress: Option<Bars>,
+    printer: Printer,
     blocked: bool,
-    quiet_log: bool,
 }
 
 struct Bars {
@@ -134,7 +167,7 @@ impl Driver {
                     }
                 }
                 _ = &mut ctrl_c => {
-                    self.println("Interrupted: cancelling after the current views (Ctrl-C again to abort)");
+                    self.app.log(LogLevel::Warn, "Interrupted: cancelling after the current views (Ctrl-C again to abort)");
                     self.act(Action::Cancel);
                     ctrl_c = Box::pin(tokio::signal::ctrl_c());
                 }
@@ -166,38 +199,13 @@ impl Driver {
         {
             self.blocked = true;
         }
-        let before = self.app.state.log.len();
         for cmd in self.app.apply(event) {
             if let Command::SaveSettings(_) = cmd {
                 continue;
             }
             self.engine.execute(cmd);
         }
-        // Print new log lines.
-        let new: Vec<_> = self
-            .app
-            .state
-            .log
-            .iter()
-            .skip(before.min(self.app.state.log.len()))
-            .cloned()
-            .collect();
-        for entry in new {
-            if self.quiet_log && entry.level == LogLevel::Info && self.progress.is_some() {
-                continue;
-            }
-            self.println(&format!("{:<5} {}", entry.level.label(), entry.message));
-        }
         self.update_bars();
-    }
-
-    fn println(&self, line: &str) {
-        match &self.progress {
-            Some(bars) => {
-                let _ = bars.multi.println(line);
-            }
-            None => eprintln!("{line}"),
-        }
     }
 
     fn print_info(&self) {
@@ -317,6 +325,7 @@ impl Driver {
         );
         item.set_prefix("item");
         overall.enable_steady_tick(Duration::from_millis(250));
+        self.printer.set_bars(Some(multi.clone()));
         self.progress = Some(Bars {
             multi,
             overall,
@@ -373,6 +382,7 @@ impl Driver {
             bars.item.finish_and_clear();
             bars.overall.finish_and_clear();
             let _ = bars.multi.clear();
+            self.printer.set_bars(None);
         }
         let p = &self.app.state.run.progress;
         println!(

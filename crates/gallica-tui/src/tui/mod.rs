@@ -10,14 +10,14 @@ use std::time::Duration;
 use crossterm::event::{Event as TermEvent, EventStream, KeyEventKind};
 use futures::StreamExt;
 use gallica_core::engine::channel;
-use gallica_core::{Action, App, Engine};
+use gallica_core::{Action, App, Engine, LogBuffer};
 
 use crate::EXIT_USAGE;
 use crate::cli::{Cli, load_settings};
 use state::UiState;
 
 /// Runs the terminal UI and returns the exit code.
-pub async fn run(cli: &Cli, target: Option<String>) -> u8 {
+pub async fn run(cli: &Cli, log: LogBuffer, target: Option<String>) -> u8 {
     if !std::io::stdout().is_terminal() {
         eprintln!("the terminal UI needs a terminal; use `gallica download` for scripts");
         return EXIT_USAGE;
@@ -38,7 +38,10 @@ pub async fn run(cli: &Cli, target: Option<String>) -> u8 {
         }
     };
     let mut app = App::new(settings);
-    let mut ui = UiState::default();
+    let mut ui = UiState {
+        log_buffer: log,
+        ..Default::default()
+    };
     if let Some(t) = target {
         for cmd in app.update(Action::SetInput(t)) {
             engine.execute(cmd);
@@ -54,6 +57,7 @@ pub async fn run(cli: &Cli, target: Option<String>) -> u8 {
     let mut events = EventStream::new();
     let mut tick = tokio::time::interval(Duration::from_millis(250));
     let result: std::io::Result<()> = loop {
+        ui.refresh_log();
         if let Err(e) = terminal.draw(|frame| ui::draw(frame, &mut ui, &app.state)) {
             break Err(e);
         }

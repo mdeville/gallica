@@ -491,23 +491,25 @@ pub fn bottom_panel(app: &mut GuiApp, ctx: &egui::Context) {
                 ui.heading("Log");
                 ui.toggle_value(&mut app.gui.show_log, "show");
                 if ui.small_button("clear").clicked() {
-                    app.dispatch(Action::ClearLog);
+                    app.log.clear();
                 }
             });
             if app.gui.show_log {
                 egui::ScrollArea::vertical()
                     .stick_to_bottom(true)
                     .show(ui, |ui| {
-                        for entry in &app.core.state.log {
+                        // Same lines as the headless commands print.
+                        for entry in app.log.snapshot() {
                             let color = match entry.level {
+                                LogLevel::Trace | LogLevel::Debug => ui.visuals().weak_text_color(),
+                                LogLevel::Info if entry.target.is_some() => {
+                                    ui.visuals().weak_text_color()
+                                }
                                 LogLevel::Info => ui.visuals().text_color(),
                                 LogLevel::Warn => YELLOW,
                                 LogLevel::Error => RED,
                             };
-                            ui.colored_label(
-                                color,
-                                format!("{:<5} {}", entry.level.label(), entry.message),
-                            );
+                            ui.colored_label(color, entry.line());
                         }
                     });
             }

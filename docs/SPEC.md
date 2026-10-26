@@ -30,8 +30,8 @@ resume later. The same workflow is offered in three ways:
   `egui_extras` provides image loading for page previews.
 - **Headless:** `clap` for arguments, `indicatif` for progress bars.
 - **Shared:** `tokio` runtime, `serde` + `toml` for settings, `serde_json` for
-  job files, `directories` for platform config paths, `tracing` with a file
-  subscriber for logs, `tokio-util` for cancellation tokens.
+  job files, `directories` for platform config paths, `tracing` for every
+  log line (see 4.7), `tokio-util` for cancellation tokens.
 
 What is shared is not widgets, which cannot be, but everything that decides
 what a widget shows: the state, the actions, the engine, the formatting.
@@ -78,7 +78,6 @@ pub struct AppState {
     pub settings: Settings,        // see 4.3
     pub plan: Option<Plan>,        // what a run would download, with estimates
     pub run: Run,                  // phase, per-item status, progress counters
-    pub log: VecDeque<LogEntry>,   // bounded, newest last
 }
 
 pub enum Resolved {
@@ -110,7 +109,7 @@ pub enum Action {
     SetYears(Option<RangeInclusive<u16>>), SetMaxIssues(Option<usize>),
     SetVariant(ImageVariant), SetOutputDir(PathBuf), SetOverwrite(bool), SetSaveText(bool),
     BuildPlan, Start, Pause, Resume, Cancel, RetryFailed,
-    OpenJob(PathBuf), ClearLog, Quit,
+    OpenJob(PathBuf), Quit,
 }
 
 pub enum Event {
@@ -190,6 +189,32 @@ Titles are sanitised for file systems (no `/ \ : * ? " < > |`, trimmed, at
 most 80 characters). A `job.json` at the root of each target directory stores
 the plan and settings of the last run so `OpenJob` can restore it.
 
+### 4.7 Logging
+
+Everything is logged through `tracing`. `App::log` emits the messages meant
+for the user (resolution, plan, failures, run summary) with the `gallica_app`
+target; the SDK and the engine log diagnostics under their module targets,
+and `log` crate records from dependencies are bridged in. `gallica_core::log`
+holds the pieces each front end assembles:
+
+- one filter for every output, from `Verbosity` unless `RUST_LOG` is set:
+  normal (app messages at info, the rest at warn), `-v` (info, debug from
+  gallica) and `--debug` (debug from everything, dependencies included);
+- one line format, `level text`, where diagnostics prefix the text with
+  their target;
+- outputs: stderr, a `LogBuffer` (the last 500 entries) that the log panels
+  show, and a log file.
+
+| Front end | Outputs |
+|-----------|---------|
+| headless commands | stderr, printed above the progress bars |
+| terminal UI | log panel, `gallica.log` |
+| desktop GUI | log panel, stderr, `gallica-gui.log` |
+
+Log files go to the platform state directory (`~/.local/state/gallica` on
+Linux; the local data directory elsewhere) and are truncated at start; their
+lines are prefixed with an RFC 3339 timestamp.
+
 ## 5. Panels
 
 Both front ends show the same six panels, fed from the same `AppState`:
@@ -201,7 +226,7 @@ Both front ends show the same six panels, fed from the same `AppState`:
 | Settings | year range, max issues, variant, output dir, overwrite, save text, contact | Set* |
 | Queue | table: date, ark, label, views done/total, status, per-item bar; selection shows the item's error | RetryFailed |
 | Progress | overall bar, items and views done, bytes, rate, ETA, quota waits, phase | Start, Pause, Resume, Cancel |
-| Log | last N log lines with level | ClearLog |
+| Log | last N log lines with level (see 4.7) | clear (front end only) |
 
 ### 5.1 Terminal layout (minimum 80×24)
 
@@ -259,7 +284,8 @@ gallica tui [<target>]                         the terminal UI
 All subcommands read `config.toml`; `--contact` is required if the file has
 none. `download` refuses full resolution without `--yes` after printing the
 estimate. Exit codes: 0 success, 1 some items failed, 2 bad arguments,
-3 blocked by Gallica (challenge or 403).
+3 blocked by Gallica (challenge or 403). `-v` and `--debug` raise the log
+level (see 4.7).
 
 ## 7. Testing
 

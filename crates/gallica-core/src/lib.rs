@@ -17,6 +17,7 @@ pub mod engine;
 pub mod format;
 pub mod job;
 pub mod layout;
+pub mod log;
 pub mod messages;
 pub mod plan;
 pub mod settings;
@@ -24,11 +25,12 @@ pub mod state;
 
 pub use app::App;
 pub use engine::Engine;
+pub use log::{LogBuffer, LogEntry, LogLevel, Verbosity};
 pub use messages::{Action, Command, Event, ItemOutcome};
 pub use settings::{Settings, VariantSpec};
 pub use state::{
-    AppState, Estimate, ItemId, ItemState, ItemStatus, LogEntry, LogLevel, Phase, Plan, PlanItem,
-    Progress, Resolved, Run, Target, TargetStatus,
+    AppState, Estimate, ItemId, ItemState, ItemStatus, Phase, Plan, PlanItem, Progress, Resolved,
+    Run, Target, TargetStatus,
 };
 
 /// Re-export of the SDK for front ends that need its types.

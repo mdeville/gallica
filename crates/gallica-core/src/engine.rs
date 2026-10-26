@@ -12,10 +12,11 @@ use tokio_util::sync::CancellationToken;
 
 use crate::job::{self, DoneMarker, ItemMetadata, JobFile, PeriodicalFile};
 use crate::layout;
+use crate::log::LogLevel;
 use crate::messages::{Command, Event, ItemOutcome};
 use crate::plan;
 use crate::settings::Settings;
-use crate::state::{ItemId, LogLevel, Plan, PlanItem, Resolved};
+use crate::state::{ItemId, Plan, PlanItem, Resolved};
 
 /// Sender half of the event channel.
 pub type EventSender = mpsc::UnboundedSender<Event>;

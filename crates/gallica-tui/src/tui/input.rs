@@ -83,7 +83,7 @@ pub fn handle_key(key: KeyEvent, ui: &mut UiState, app: &AppState) -> Vec<Action
         }
         Focus::Log => match key.code {
             KeyCode::Up | KeyCode::Char('k') => {
-                ui.log_scroll = (ui.log_scroll + 1).min(app.log.len().saturating_sub(1));
+                ui.log_scroll = (ui.log_scroll + 1).min(ui.log.len().saturating_sub(1));
                 vec![]
             }
             KeyCode::Down | KeyCode::Char('j') => {
@@ -91,7 +91,7 @@ pub fn handle_key(key: KeyEvent, ui: &mut UiState, app: &AppState) -> Vec<Action
                 vec![]
             }
             KeyCode::PageUp => {
-                ui.log_scroll = (ui.log_scroll + 10).min(app.log.len().saturating_sub(1));
+                ui.log_scroll = (ui.log_scroll + 10).min(ui.log.len().saturating_sub(1));
                 vec![]
             }
             KeyCode::PageDown => {
@@ -104,7 +104,9 @@ pub fn handle_key(key: KeyEvent, ui: &mut UiState, app: &AppState) -> Vec<Action
             }
             KeyCode::Char('x') => {
                 ui.log_scroll = 0;
-                vec![Action::ClearLog]
+                ui.log_buffer.clear();
+                ui.log.clear();
+                vec![]
             }
             _ => vec![],
         },

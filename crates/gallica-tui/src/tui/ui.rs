@@ -36,7 +36,7 @@ pub fn draw(frame: &mut Frame, ui: &mut UiState, app: &AppState) {
     draw_settings(frame, left[1], ui, app);
     draw_queue(frame, middle[1], ui, app);
     draw_progress(frame, rows[2], app);
-    draw_log(frame, rows[3], ui, app);
+    draw_log(frame, rows[3], ui);
     draw_footer(frame, rows[4], ui, app);
 
     if let Some(confirm) = ui.confirm {
@@ -347,29 +347,37 @@ fn draw_progress(frame: &mut Frame, area: Rect, app: &AppState) {
     frame.render_widget(gauge, area);
 }
 
-fn draw_log(frame: &mut Frame, area: Rect, ui: &UiState, app: &AppState) {
+fn draw_log(frame: &mut Frame, area: Rect, ui: &UiState) {
     let focused = ui.focus == Focus::Log;
     let height = area.height.saturating_sub(2) as usize;
-    let total = app.log.len();
+    let total = ui.log.len();
     let end = total.saturating_sub(ui.log_scroll);
     let start = end.saturating_sub(height);
-    let lines: Vec<Line> = app
+    let lines: Vec<Line> = ui
         .log
         .iter()
         .skip(start)
         .take(end - start)
         .map(|entry| {
             let time = clock(entry.at);
+            // Same layout as the headless commands' lines: level, then text.
+            let label = format!("{:<5}", entry.level.label());
             let level = match entry.level {
-                LogLevel::Info => Span::raw("info ").dim(),
-                LogLevel::Warn => Span::raw("warn ").yellow(),
-                LogLevel::Error => Span::raw("error").red(),
+                LogLevel::Trace | LogLevel::Debug => Span::raw(label).dark_gray(),
+                LogLevel::Info => Span::raw(label).dim(),
+                LogLevel::Warn => Span::raw(label).yellow(),
+                LogLevel::Error => Span::raw(label).red(),
             };
+            let text = Span::raw(entry.text());
             Line::from(vec![
                 Span::raw(format!("{time} ")).dim(),
                 level,
                 Span::raw(" "),
-                Span::raw(entry.message.clone()),
+                if entry.target.is_some() {
+                    text.dim()
+                } else {
+                    text
+                },
             ])
         })
         .collect();
@@ -478,7 +486,7 @@ mod tests {
         run.progress.views_done = 10;
         run.progress.bytes = 1000;
         run.progress.started_at = Some(std::time::Instant::now());
-        let mut state = AppState {
+        AppState {
             target: Target {
                 input: "https://gallica.bnf.fr/ark:/12148/cb327110547/".into(),
                 status: TargetStatus::Resolved,
@@ -510,13 +518,7 @@ mod tests {
             }),
             run,
             ..Default::default()
-        };
-        state.log.push_back(gallica_core::LogEntry {
-            at: std::time::SystemTime::UNIX_EPOCH,
-            level: LogLevel::Warn,
-            message: "quota: waiting 12s".into(),
-        });
-        state
+        }
     }
 
     fn render(width: u16, height: u16, ui: &mut UiState, app: &AppState) -> String {
@@ -539,6 +541,13 @@ mod tests {
         let app = sample_state();
         let mut ui = UiState {
             focus: Focus::Queue,
+            log: vec![
+                gallica_core::LogEntry::new(LogLevel::Warn, "quota: waiting 12s"),
+                gallica_core::LogEntry {
+                    target: Some("gallica::client".into()),
+                    ..gallica_core::LogEntry::new(LogLevel::Debug, "GET attempt=1")
+                },
+            ],
             ..Default::default()
         };
         ui.table.select(Some(1));
@@ -559,7 +568,8 @@ mod tests {
             "boom",
             "Running",
             "10/24 views",
-            "quota: waiting 12s",
+            "warn  quota: waiting 12s",
+            "debug gallica::client: GET attempt=1",
             "me@example.org",
             "1921",
             "highres",
