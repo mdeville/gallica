@@ -35,6 +35,7 @@ pub struct Engine {
     pause: watch::Sender<bool>,
     cancel: CancellationToken,
     run: Option<JoinHandle<()>>,
+    config_path: Option<PathBuf>,
 }
 
 impl Engine {
@@ -59,7 +60,14 @@ impl Engine {
             pause: watch::channel(false).0,
             cancel: CancellationToken::new(),
             run: None,
+            config_path: None,
         })
+    }
+
+    /// Saves settings to this file instead of the platform config file.
+    pub fn with_config_path(mut self, path: Option<PathBuf>) -> Engine {
+        self.config_path = path;
+        self
     }
 
     /// The SDK client.
@@ -139,8 +147,13 @@ impl Engine {
             }
             Command::SaveSettings(settings) => {
                 let tx = self.tx.clone();
+                let path = self.config_path.clone();
                 self.handle.spawn(async move {
-                    let result = tokio::task::spawn_blocking(move || settings.save()).await;
+                    let result = tokio::task::spawn_blocking(move || match path {
+                        Some(p) => settings.save_to(&p).map(|_| p),
+                        None => settings.save(),
+                    })
+                    .await;
                     let failure = match result {
                         Ok(Ok(_)) => None,
                         Ok(Err(e)) => Some(e.to_string()),
